@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_quotes"
+            android:icon="@drawable/ic_euro_symbol_white_24dp"
+            android:title="Quotes" />
+        <item
+            android:id="@+id/nav_trade"
+            android:icon="@drawable/ic_autorenew_white_24dp"
+            android:title="Trade" />
+    </group>
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_perm_identity_white_24dp"
+        android:title="Profile" />
+
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@drawable/ic_settings_white_24dp"
+        android:title="Settings" />
+
+</menu>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">BTC-E Client</string>
+    <string name="action_settings">Settings</string>
+    <string name="showIt">Do IT!</string>
+    <string name="testMsg">Just another test app</string>
+    <string name="receivedHolder">Received JSON</string>
+    <string name="title_activity_main">Quotes</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="edit">Edit</string>
+</resources>
