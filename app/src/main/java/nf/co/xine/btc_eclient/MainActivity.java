@@ -9,6 +9,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -17,6 +22,8 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.mobeta.android.dslv.DragSortController;
+import com.mobeta.android.dslv.DragSortListView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,12 +31,15 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Objects;
 
 import android.os.Handler;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private CustomAdapter adapter;
     String url = "https://btc-e.com/api/3/ticker/btc_usd-btc_rur";
 
     Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
@@ -48,6 +58,25 @@ public class MainActivity extends AppCompatActivity
 
     private JsonObjectRequest jsObjRequest = new JsonObjectRequest
             (Request.Method.GET, url, null, listener, errorListener);
+
+
+    private DragSortListView.DropListener onDrop = new DragSortListView.DropListener() {
+        @Override
+        public void drop(int from, int to) {
+            if (from != to) {
+                HashMap item = adapter.getItem(from);
+                adapter.remove(item);
+                adapter.insert(item, to);
+            }
+        }
+    };
+
+    private DragSortListView.RemoveListener onRemove = new DragSortListView.RemoveListener() {
+        @Override
+        public void remove(int which) {
+            adapter.remove(adapter.getItem(which));
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +118,7 @@ public class MainActivity extends AppCompatActivity
 
     private void updateQuotes(JSONObject jResponse) {
         ArrayList<HashMap<String, String>> currencies = new ArrayList<>();
+        adapter = new CustomAdapter(this, currencies);
         HashMap<String, String> tmp;
         Iterator keys = jResponse.keys();
         while (keys.hasNext()) {
@@ -104,14 +134,23 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
-        ListAdapter adapter = new SimpleAdapter(
-                MainActivity.this, currencies,
-                R.layout.list_item, new String[]{"name", "ask",
-                "bid"}, new int[]{R.id.currency_name,
-                R.id.ask, R.id.bid});
-        ListView listView = (ListView) findViewById(R.id.quotes_list);
-        if (listView != null)
+        DragSortListView listView = (DragSortListView) findViewById(R.id.quotes_list);
+        if (listView != null) {
             listView.setAdapter(adapter);
+            listView.setDropListener(onDrop);
+            listView.setRemoveListener(onRemove);
+        }
+        DragSortController controller = new DragSortController(listView);
+        controller.setDragHandleId(R.id.drag_handle);
+        //controller.setClickRemoveId(R.id.);
+        controller.setRemoveEnabled(false);
+        controller.setSortEnabled(true);
+        controller.setDragInitMode(1);
+        //controller.setRemoveMode(removeMode);
+
+        listView.setFloatViewManager(controller);
+        listView.setOnTouchListener(controller);
+        listView.setDragEnabled(true);
     }
 
     String truncate(String original) {
@@ -160,8 +199,17 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_edit) {
-            return true;
+        if (id == R.id.action_edit) {/*
+            ImageView img = (ImageView)findViewById(R.id.reorder_icon);
+            TextView ask = (TextView)findViewById(R.id.ask);
+            TextView bid = (TextView)findViewById(R.id.bid);
+            Animation slideLeft = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_left);
+            //img.startAnimation(slideLeft);
+            img.setVisibility(View.VISIBLE);
+            ask.setVisibility(View.INVISIBLE);
+            bid.setVisibility(View.INVISIBLE);
+
+            return true;*/
         }
 
         return super.onOptionsItemSelected(item);
