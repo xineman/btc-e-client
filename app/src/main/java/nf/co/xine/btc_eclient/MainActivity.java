@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private CustomAdapter adapter;
+    private DragSortListView listView;
     String url = "https://btc-e.com/api/3/ticker/btc_usd-btc_rur";
 
     Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
@@ -134,7 +135,7 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
-        DragSortListView listView = (DragSortListView) findViewById(R.id.quotes_list);
+        listView = (DragSortListView) findViewById(R.id.quotes_list);
         if (listView != null) {
             listView.setAdapter(adapter);
             listView.setDropListener(onDrop);
@@ -199,7 +200,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_edit) {/*
+        if (id == R.id.action_edit) {
+            listView.setOnTouchListener(null);
+            /*
             ImageView img = (ImageView)findViewById(R.id.reorder_icon);
             TextView ask = (TextView)findViewById(R.id.ask);
             TextView bid = (TextView)findViewById(R.id.bid);
