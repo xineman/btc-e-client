@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 
-public class CustomAdapter extends ArrayAdapter<HashMap<String, String>> {
+public class CustomAdapter extends ArrayAdapter<Currency> {
     public CustomAdapter(Context context, ArrayList currencies, int mode) {
         super(context, 0, currencies);
         this.mode = mode;
@@ -27,12 +27,12 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String, String>> {
     static final int EDIT = 2;
     static final int DROPPING = 3;
     private int mode;
-    private ArrayList<HashMap<String, String>> currencies;
+    private ArrayList<Currency> currencies;
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         // Get the data item for this position
-        HashMap<String, String> map = getItem(position);
+        Currency cc = getItem(position);
         // Check if an existing view is being reused, otherwise inflate the view
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item, parent, false);
@@ -47,14 +47,14 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String, String>> {
         Animation slideRight = AnimationUtils.loadAnimation(getContext(), R.anim.slide_right);
         switch (mode) {
             case BROWSING: {
-                name.setText(map.get("name"));
-                ask.setText(map.get("ask"));
-                bid.setText(map.get("bid"));
+                name.setText(cc.getName());
+                ask.setText(String.valueOf(cc.getAsk()));
+                bid.setText(String.valueOf(cc.getBid()));
                 break;
             }
             case EDIT: {
-                name.setText(map.get("name"));
-                if (map.get("enabled").equals("1"))
+                name.setText(cc.getName());
+                if (cc.isEnabled())
                     showPairSwitch.setChecked(true);
                 else
                     showPairSwitch.setChecked(false);
@@ -68,8 +68,8 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String, String>> {
                 break;
             }
             case DROPPING: {
-                name.setText(map.get("name"));
-                if (map.get("enabled").equals("1"))
+                name.setText(cc.getName());
+                if (cc.isEnabled())
                     showPairSwitch.setChecked(true);
                 else
                     showPairSwitch.setChecked(false);
@@ -83,11 +83,9 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String, String>> {
         ((Switch) convertView.findViewById(R.id.showPairSwitch)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                int nn = 0;
-                if (isChecked) nn = 1;
-                for (HashMap<String, String> tmp : currencies) {
-                    if (tmp.get("name").equals(name.getText().toString()))
-                        tmp.put("enabled", String.valueOf(nn));
+                for (Currency tmp : currencies) {
+                    if (tmp.getName().equals(name.getText().toString()))
+                        tmp.setEnabled(isChecked);
                 }
             }
         });

@@ -3,7 +3,6 @@ package nf.co.xine.btc_eclient;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.annotation.BoolRes;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -14,21 +13,11 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
-import android.widget.ImageView;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.SimpleAdapter;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 
@@ -36,24 +25,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Objects;
 
 import android.os.Handler;
-import android.widget.Switch;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private CustomAdapter adapter;
     private DragSortListView listView;
-    private ArrayList<HashMap<String, String>> allCurrencies = new ArrayList<>();
-    private ArrayList<HashMap<String, String>> currencies;
+
+    private ArrayList<Currency> currencies;
+    private ArrayList<Currency> allCurrencies;
     private boolean editMode = false;
     private String url;
+    final Handler handler = new Handler();
 
     Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
         @Override
@@ -71,19 +58,18 @@ public class MainActivity extends AppCompatActivity
 
     private JsonObjectRequest jsObjRequest;
 
+    private boolean toBoolean(String value) {
+        return Integer.parseInt(value) != 0;
+    }
 
     private void setCurrencies() {
         try {
-            //this.deleteDatabase("settings.db");
+            allCurrencies = new ArrayList<>();
             DbHelper helper = new DbHelper(this);
             SQLiteDatabase db = helper.getWritableDatabase();
             Cursor cursor = db.query("CURRENCIES", new String[]{"NAME", "IS_ENABLED", "PAIR_INDEX"}, null, null, null, null, "PAIR_INDEX ASC");
             while (cursor.moveToNext()) {
-                //cursor.moveToFirst();
-                HashMap<String, String> tmp = new HashMap<>();
-                tmp.put("name", cursor.getString(0));
-                tmp.put("enabled", cursor.getString(1));
-                allCurrencies.add(tmp);
+                allCurrencies.add(new Currency(cursor.getString(0), toBoolean(cursor.getString(1))));
             }
             cursor.close();
             db.close();
@@ -93,17 +79,20 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    private void setShownCurrencies() {
+        currencies = new ArrayList<>();
+        for (Currency cc : allCurrencies) {
+            if (cc.isEnabled()) currencies.add(cc);
+        }
+    }
+
     private void saveOrderToDb() {
         try {
-            //this.deleteDatabase("settings.db");
             DbHelper helper = new DbHelper(this);
             SQLiteDatabase db = helper.getWritableDatabase();
             db.delete("CURRENCIES", null, null);
             for (int i = 0; i < allCurrencies.size(); i++) {
-                boolean t = false;
-                if (allCurrencies.get(i).get("enabled").equals("1"))
-                    t = true;
-                DbHelper.insertCurrency(db, allCurrencies.get(i).get("name"), t, i);
+                DbHelper.insertCurrency(db, allCurrencies.get(i).getName(), allCurrencies.get(i).isEnabled(), i);
             }
             db.close();
             Log.d("Main act", "Successfully inserted!!!");
@@ -115,9 +104,8 @@ public class MainActivity extends AppCompatActivity
     @NonNull
     private String urlBuilder() {
         StringBuilder url = new StringBuilder("https://btc-e.com/api/3/ticker/");
-        for (HashMap<String, String> tmp : allCurrencies) {
-            if (tmp.get("enabled").equals("1"))
-                url.append(convertName(tmp.get("name"))).append("-");
+        for (Currency tmp : currencies) {
+            url.append(convertName(tmp.getName())).append("-");
         }
         if (url.charAt(url.length() - 1) == '-')
             url.deleteCharAt(url.length() - 1);
@@ -128,7 +116,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void drop(int from, int to) {
             if (from != to) {
-                HashMap item = adapter.getItem(from);
+                Currency item = adapter.getItem(from);
                 adapter.setMode(CustomAdapter.DROPPING);
                 adapter.remove(item);
                 adapter.insert(item, to);
@@ -168,14 +156,12 @@ public class MainActivity extends AppCompatActivity
         actionBar.setDisplayShowCustomEnabled(true);
         */
 
-
         setCurrencies();
+        setShownCurrencies();
         url = urlBuilder();
         jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, listener, errorListener);
 
-
-        final Handler handler = new Handler();
         handler.post(new Runnable() {
             public void run() {
                 if (!editMode)
@@ -190,24 +176,17 @@ public class MainActivity extends AppCompatActivity
         return (name.substring(0, 3) + "_" + name.substring(4, 7)).toLowerCase();
     }
 
-    private static String convertToName(String name) {
-        return (name.substring(0, 3) + "/" + name.substring(4, 7)).toUpperCase();
-    }
-
     private void updateQuotes(JSONObject jResponse) {
-        currencies = new ArrayList<>();
+        setShownCurrencies();
         adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
         HashMap<String, String> tmp;
         Iterator keys = jResponse.keys();
-        while (keys.hasNext()) {
+        for (Currency cc: currencies) {
             String p = keys.next().toString();
-            tmp = new HashMap<>();
-            tmp.put("name", convertToName(p));
             try {
                 JSONObject object = jResponse.getJSONObject(p);
-                tmp.put("ask", truncate(object.getString("buy")));
-                tmp.put("bid", truncate(object.getString("sell")));
-                currencies.add(tmp);
+                cc.setAsk(object.getDouble("buy"));
+                cc.setBid(object.getDouble("sell"));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -286,6 +265,7 @@ public class MainActivity extends AppCompatActivity
                 listView.setDragEnabled(true);
             } else {
                 saveOrderToDb();
+                setShownCurrencies();
                 url = urlBuilder();
                 jsObjRequest = new JsonObjectRequest
                         (Request.Method.GET, url, null, listener, errorListener);
