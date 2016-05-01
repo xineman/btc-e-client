@@ -1,18 +1,24 @@
 package nf.co.xine.btc_eclient;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.BoolRes;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -22,6 +28,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 
@@ -29,11 +36,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Objects;
 
 import android.os.Handler;
+import android.widget.Switch;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity
@@ -41,7 +50,10 @@ public class MainActivity extends AppCompatActivity
 
     private CustomAdapter adapter;
     private DragSortListView listView;
-    String url = "https://btc-e.com/api/3/ticker/btc_usd-btc_rur";
+    private ArrayList<HashMap<String, String>> allCurrencies = new ArrayList<>();
+    private ArrayList<HashMap<String, String>> currencies;
+    private boolean editMode = false;
+    private String url;
 
     Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
         @Override
@@ -57,17 +69,70 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
-    private JsonObjectRequest jsObjRequest = new JsonObjectRequest
-            (Request.Method.GET, url, null, listener, errorListener);
+    private JsonObjectRequest jsObjRequest;
 
+
+    private void setCurrencies() {
+        try {
+            //this.deleteDatabase("settings.db");
+            DbHelper helper = new DbHelper(this);
+            SQLiteDatabase db = helper.getWritableDatabase();
+            Cursor cursor = db.query("CURRENCIES", new String[]{"NAME", "IS_ENABLED", "PAIR_INDEX"}, null, null, null, null, "PAIR_INDEX ASC");
+            while (cursor.moveToNext()) {
+                //cursor.moveToFirst();
+                HashMap<String, String> tmp = new HashMap<>();
+                tmp.put("name", cursor.getString(0));
+                tmp.put("enabled", cursor.getString(1));
+                allCurrencies.add(tmp);
+            }
+            cursor.close();
+            db.close();
+            Log.d("Main act", helper.getDatabaseName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveOrderToDb() {
+        try {
+            //this.deleteDatabase("settings.db");
+            DbHelper helper = new DbHelper(this);
+            SQLiteDatabase db = helper.getWritableDatabase();
+            db.delete("CURRENCIES", null, null);
+            for (int i = 0; i < allCurrencies.size(); i++) {
+                boolean t = false;
+                if (allCurrencies.get(i).get("enabled").equals("1"))
+                    t = true;
+                DbHelper.insertCurrency(db, allCurrencies.get(i).get("name"), t, i);
+            }
+            db.close();
+            Log.d("Main act", "Successfully inserted!!!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @NonNull
+    private String urlBuilder() {
+        StringBuilder url = new StringBuilder("https://btc-e.com/api/3/ticker/");
+        for (HashMap<String, String> tmp : allCurrencies) {
+            if (tmp.get("enabled").equals("1"))
+                url.append(convertName(tmp.get("name"))).append("-");
+        }
+        if (url.charAt(url.length() - 1) == '-')
+            url.deleteCharAt(url.length() - 1);
+        return url.toString();
+    }
 
     private DragSortListView.DropListener onDrop = new DragSortListView.DropListener() {
         @Override
         public void drop(int from, int to) {
             if (from != to) {
                 HashMap item = adapter.getItem(from);
+                adapter.setMode(CustomAdapter.DROPPING);
                 adapter.remove(item);
                 adapter.insert(item, to);
+                //Collections.swap(allCurrencies,allCurrencies.indexOf(item),to);
             }
         }
     };
@@ -103,29 +168,41 @@ public class MainActivity extends AppCompatActivity
         actionBar.setDisplayShowCustomEnabled(true);
         */
 
+
+        setCurrencies();
+        url = urlBuilder();
+        jsObjRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, listener, errorListener);
+
+
         final Handler handler = new Handler();
         handler.post(new Runnable() {
             public void run() {
-                MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
+                if (!editMode)
+                    MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
                 handler.postDelayed(this, 2000);
             }
         });
 
     }
 
-    private String convertName(String name) {
+    private static String convertName(String name) {
+        return (name.substring(0, 3) + "_" + name.substring(4, 7)).toLowerCase();
+    }
+
+    private static String convertToName(String name) {
         return (name.substring(0, 3) + "/" + name.substring(4, 7)).toUpperCase();
     }
 
     private void updateQuotes(JSONObject jResponse) {
-        ArrayList<HashMap<String, String>> currencies = new ArrayList<>();
-        adapter = new CustomAdapter(this, currencies);
+        currencies = new ArrayList<>();
+        adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
         HashMap<String, String> tmp;
         Iterator keys = jResponse.keys();
         while (keys.hasNext()) {
             String p = keys.next().toString();
             tmp = new HashMap<>();
-            tmp.put("name", convertName(p));
+            tmp.put("name", convertToName(p));
             try {
                 JSONObject object = jResponse.getJSONObject(p);
                 tmp.put("ask", truncate(object.getString("buy")));
@@ -141,17 +218,7 @@ public class MainActivity extends AppCompatActivity
             listView.setDropListener(onDrop);
             listView.setRemoveListener(onRemove);
         }
-        DragSortController controller = new DragSortController(listView);
-        controller.setDragHandleId(R.id.drag_handle);
-        //controller.setClickRemoveId(R.id.);
-        controller.setRemoveEnabled(false);
-        controller.setSortEnabled(true);
-        controller.setDragInitMode(1);
-        //controller.setRemoveMode(removeMode);
 
-        listView.setFloatViewManager(controller);
-        listView.setOnTouchListener(controller);
-        listView.setDragEnabled(true);
     }
 
     String truncate(String original) {
@@ -201,18 +268,34 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit) {
-            listView.setOnTouchListener(null);
-            /*
-            ImageView img = (ImageView)findViewById(R.id.reorder_icon);
-            TextView ask = (TextView)findViewById(R.id.ask);
-            TextView bid = (TextView)findViewById(R.id.bid);
-            Animation slideLeft = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_left);
-            //img.startAnimation(slideLeft);
-            img.setVisibility(View.VISIBLE);
-            ask.setVisibility(View.INVISIBLE);
-            bid.setVisibility(View.INVISIBLE);
+            if (!editMode) {
+                editMode = true;
+                MySingleton.getInstance(getApplicationContext()).getRequestQueue().stop();
+                DragSortController controller = new DragSortController(listView);
+                controller.setDragHandleId(R.id.drag_handle);
+                //controller.setClickRemoveId(R.id.);
+                controller.setRemoveEnabled(false);
+                controller.setSortEnabled(true);
+                controller.setDragInitMode(1);
+                //controller.setRemoveMode(removeMode);
 
-            return true;*/
+                adapter = new CustomAdapter(this, allCurrencies, CustomAdapter.EDIT);
+                listView.setAdapter(adapter);
+                listView.setFloatViewManager(controller);
+                listView.setOnTouchListener(controller);
+                listView.setDragEnabled(true);
+            } else {
+                saveOrderToDb();
+                url = urlBuilder();
+                jsObjRequest = new JsonObjectRequest
+                        (Request.Method.GET, url, null, listener, errorListener);
+                MySingleton.getInstance(getApplicationContext()).getRequestQueue().start();
+                adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
+                listView.setAdapter(adapter);
+                listView.setOnTouchListener(null);
+                editMode = false;
+            }
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
