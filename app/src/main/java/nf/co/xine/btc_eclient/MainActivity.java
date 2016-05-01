@@ -117,7 +117,6 @@ public class MainActivity extends AppCompatActivity
         public void drop(int from, int to) {
             if (from != to) {
                 Currency item = adapter.getItem(from);
-                adapter.setMode(CustomAdapter.DROPPING);
                 adapter.remove(item);
                 adapter.insert(item, to);
                 //Collections.swap(allCurrencies,allCurrencies.indexOf(item),to);
@@ -179,7 +178,6 @@ public class MainActivity extends AppCompatActivity
     private void updateQuotes(JSONObject jResponse) {
         setShownCurrencies();
         adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
-        HashMap<String, String> tmp;
         Iterator keys = jResponse.keys();
         for (Currency cc: currencies) {
             String p = keys.next().toString();
@@ -196,27 +194,6 @@ public class MainActivity extends AppCompatActivity
             listView.setAdapter(adapter);
             listView.setDropListener(onDrop);
             listView.setRemoveListener(onRemove);
-        }
-
-    }
-
-    String truncate(String original) {
-        if (original.length() == 7) return original;
-        else if (original.length() > 7)
-            if (original.indexOf(".") < 8)
-                return original.substring(0, 7);
-            else return original.substring(0, original.indexOf("."));
-        else {
-            int n = 7 - original.length();
-            if (original.contains("."))
-                for (int i = 0; i < n; i++)
-                    original = original.concat("0");
-            else {
-                original = original.concat(".");
-                for (int i = 0; i < n - 1; i++)
-                    original = original.concat("0");
-            }
-            return original;
         }
 
     }

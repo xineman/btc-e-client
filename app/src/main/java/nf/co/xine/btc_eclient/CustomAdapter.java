@@ -11,6 +11,8 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -44,12 +46,31 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         View dragH = convertView.findViewById(R.id.drag_handle);
         Switch showPairSwitch = (Switch) convertView.findViewById(R.id.showPairSwitch);
         Animation slideLeft = AnimationUtils.loadAnimation(getContext(), R.anim.slide_left);
+
+
+
+        slideLeft.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mode = DROPPING;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
         Animation slideRight = AnimationUtils.loadAnimation(getContext(), R.anim.slide_right);
         switch (mode) {
             case BROWSING: {
                 name.setText(cc.getName());
-                ask.setText(String.valueOf(cc.getAsk()));
-                bid.setText(String.valueOf(cc.getBid()));
+                ask.setText(convertDouble(cc.getAsk()));
+                bid.setText(convertDouble(cc.getBid()));
                 break;
             }
             case EDIT: {
@@ -95,5 +116,48 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
 
     void setMode(int mode) {
         this.mode = mode;
+    }
+
+    String convertDouble(double val) {
+
+        String text = Double.toString(val);
+        int integerPlaces = text.indexOf('.');
+        switch (integerPlaces) {
+            case 1: {
+                DecimalFormat df = new DecimalFormat("0.000000");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            case 2: {
+                DecimalFormat df = new DecimalFormat("#.00000");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            case 3: {
+                DecimalFormat df = new DecimalFormat("#.0000");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            case 4: {
+                DecimalFormat df = new DecimalFormat("#.000");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            case 5: {
+                DecimalFormat df = new DecimalFormat("#.00");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            case 6: {
+                DecimalFormat df = new DecimalFormat("#.0");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+            default: {
+                DecimalFormat df = new DecimalFormat("#");
+                df.setRoundingMode(RoundingMode.CEILING);
+                return df.format(val);
+            }
+        }
     }
 }
