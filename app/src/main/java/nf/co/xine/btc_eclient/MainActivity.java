@@ -2,36 +2,35 @@ package nf.co.xine.btc_eclient;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Parcelable;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
+import com.mobeta.android.dslv.SimpleFloatViewManager;
+import com.roughike.bottombar.BottomBar;
+import com.roughike.bottombar.OnMenuTabClickListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 
-import android.os.Handler;
-
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
 
     private CustomAdapter adapter;
     private DragSortListView listView;
@@ -41,6 +40,15 @@ public class MainActivity extends AppCompatActivity
     private boolean editMode = false;
     private String url;
     final Handler handler = new Handler();
+    private boolean updateEnabled = true;
+    BottomBar mBottomBar;
+    private Runnable quotesUpdating = new Runnable() {
+        public void run() {
+            if (!editMode)
+                MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
+            handler.postDelayed(this, 2000);
+        }
+    };
 
     Response.Listener<JSONObject> listener = new Response.Listener<JSONObject>() {
         @Override
@@ -73,7 +81,6 @@ public class MainActivity extends AppCompatActivity
             }
             cursor.close();
             db.close();
-            Log.d("Main act", helper.getDatabaseName());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -135,39 +142,32 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mBottomBar = BottomBar.attach(this, savedInstanceState);
+        mBottomBar.useFixedMode();
+        mBottomBar.setItemsFromMenu(R.menu.activity_main_drawer, new OnMenuTabClickListener() {
+            @Override
+            public void onMenuTabSelected(@IdRes int menuItemId) {
+                if (menuItemId == R.id.nav_quotes) {
+                    // The user selected item number one.
+                }
+            }
 
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
-        /*
-        android.app.ActionBar actionBar = getActionBar();
-        Spinner spinner = (Spinner) findViewById(R.id.tabs);
-        actionBar.setCustomView(spinner);
-        actionBar.setDisplayShowCustomEnabled(true);
-        */
-
+            @Override
+            public void onMenuTabReSelected(@IdRes int menuItemId) {
+                if (menuItemId == R.id.nav_trade) {
+                    // The user reselected item number one, scroll your content to top.
+                }
+            }
+        });
+        Log.d("accccccccccc", String.valueOf(mBottomBar.getCurrentTabPosition()));
         setCurrencies();
         setShownCurrencies();
+        listView = (DragSortListView) findViewById(R.id.quotes_list);
         url = urlBuilder();
         jsObjRequest = new JsonObjectRequest
                 (Request.Method.GET, url, null, listener, errorListener);
 
-        handler.post(new Runnable() {
-            public void run() {
-                if (!editMode)
-                    MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
-                handler.postDelayed(this, 2000);
-            }
-        });
+        handler.post(quotesUpdating);
 
     }
 
@@ -177,9 +177,10 @@ public class MainActivity extends AppCompatActivity
 
     private void updateQuotes(JSONObject jResponse) {
         setShownCurrencies();
+        Parcelable state = listView.onSaveInstanceState();
         adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
         Iterator keys = jResponse.keys();
-        for (Currency cc: currencies) {
+        for (Currency cc : currencies) {
             String p = keys.next().toString();
             try {
                 JSONObject object = jResponse.getJSONObject(p);
@@ -189,9 +190,10 @@ public class MainActivity extends AppCompatActivity
                 e.printStackTrace();
             }
         }
-        listView = (DragSortListView) findViewById(R.id.quotes_list);
+
         if (listView != null) {
             listView.setAdapter(adapter);
+            listView.onRestoreInstanceState(state);
             listView.setDropListener(onDrop);
             listView.setRemoveListener(onRemove);
         }
@@ -199,13 +201,16 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+    protected void onPause() {
+        super.onPause();
+        handler.removeCallbacks(quotesUpdating);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mBottomBar.getCurrentTabPosition() == 0)
+            handler.post(quotesUpdating);
     }
 
     @Override
@@ -225,8 +230,14 @@ public class MainActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit) {
             if (!editMode) {
+                handler.removeCallbacks(quotesUpdating);
                 editMode = true;
-                MySingleton.getInstance(getApplicationContext()).getRequestQueue().stop();
+                MySingleton.getInstance(getApplicationContext()).getRequestQueue().cancelAll(new RequestQueue.RequestFilter() {
+                    @Override
+                    public boolean apply(Request<?> request) {
+                        return true;
+                    }
+                });
                 DragSortController controller = new DragSortController(listView);
                 controller.setDragHandleId(R.id.drag_handle);
                 //controller.setClickRemoveId(R.id.);
@@ -240,13 +251,17 @@ public class MainActivity extends AppCompatActivity
                 listView.setFloatViewManager(controller);
                 listView.setOnTouchListener(controller);
                 listView.setDragEnabled(true);
+                SimpleFloatViewManager simpleFloatViewManager = new SimpleFloatViewManager(listView);
+                simpleFloatViewManager.setBackgroundColor(Color.TRANSPARENT);
+                listView.setFloatViewManager(simpleFloatViewManager);
             } else {
+                handler.post(quotesUpdating);
                 saveOrderToDb();
                 setShownCurrencies();
                 url = urlBuilder();
                 jsObjRequest = new JsonObjectRequest
                         (Request.Method.GET, url, null, listener, errorListener);
-                MySingleton.getInstance(getApplicationContext()).getRequestQueue().start();
+                //MySingleton.getInstance(getApplicationContext()).getRequestQueue().start();
                 adapter = new CustomAdapter(this, currencies, CustomAdapter.BROWSING);
                 listView.setAdapter(adapter);
                 listView.setOnTouchListener(null);
@@ -256,20 +271,5 @@ public class MainActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_quotes) {
-            // Handle the camera action
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 }
