@@ -10,3 +10,8 @@ Third-party libraries used:
 <li><a href="https://github.com/roughike/BottomBar/">BottomBar</a><br></li>
 <li><a href="https://github.com/bauerca/drag-sort-listview">DragSortListView</a></li>
 </ul>
+Some screenshots:
+
+<img src="http://i.imgur.com/3dGoYik.png" height="480px"/>
+<img src="http://i.imgur.com/YgUT4RW.png" height="480px"/>
+<img src="http://i.imgur.com/MiaLWgO.png" height="480px"/>
