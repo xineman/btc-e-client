@@ -1,0 +1,149 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="nf.co.xine.btc_eclient.CurrencyFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            style="@style/tiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/tiles_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/min_24h" />
+
+            <TextView
+                android:id="@+id/min_24h"
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="48045.61" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/tiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/tiles_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/max_24h" />
+
+            <TextView
+                android:id="@+id/max_24h"
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="49012.34" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/tiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/tiles_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/last_deal" />
+
+            <TextView
+                android:id="@+id/last_deal"
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="482.3512" />
+        </LinearLayout>
+
+        <LinearLayout
+            style="@style/tiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/tiles_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/trade_volume" />
+
+            <TextView
+                android:id="@+id/volume_24h"
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="8500" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!--
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            style="@style/tiles"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/tiles_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/avg_24h" />
+
+            <TextView
+                android:id="@+id/avg_24h"
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="485" />
+        </LinearLayout>
+
+
+    </LinearLayout>-->
+
+    <LinearLayout
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false">
+
+        <ListView
+            android:id="@+id/bid_list"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+        </ListView>
+
+        <ListView
+            android:id="@+id/ask_list"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+        </ListView>
+    </LinearLayout>
+
+</LinearLayout>
