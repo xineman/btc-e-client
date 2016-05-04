@@ -4,7 +4,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.os.Handler;
@@ -14,6 +13,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -43,13 +44,14 @@ public class QuotesFragment extends Fragment {
 
     private CustomAdapter adapter;
     private DragSortListView listView;
-
     private ArrayList<Currency> currencies;
     private ArrayList<Currency> allCurrencies;
     private String url;
+    private JsonObjectRequest jsObjRequest;
+    private boolean editMode = false;
+
     final Handler handler = new Handler();
-    private boolean updateEnabled = true;
-    private Runnable quotesUpdating = new Runnable() {
+    Runnable makeRequest = new Runnable() {
         public void run() {
             MySingleton.getInstance(getActivity().getApplicationContext()).addToRequestQueue(jsObjRequest);
             handler.postDelayed(this, 2000);
@@ -70,7 +72,42 @@ public class QuotesFragment extends Fragment {
         }
     };
 
-    private JsonObjectRequest jsObjRequest;
+    private DragSortListView.DropListener onDrop = new DragSortListView.DropListener() {
+        @Override
+        public void drop(int from, int to) {
+            if (from != to) {
+                Currency item = adapter.getItem(from);
+                adapter.remove(item);
+                adapter.insert(item, to);
+                //Collections.swap(allCurrencies,allCurrencies.indexOf(item),to);
+            }
+        }
+    };
+
+    private DragSortListView.RemoveListener onRemove = new DragSortListView.RemoveListener() {
+        @Override
+        public void remove(int which) {
+            adapter.remove(adapter.getItem(which));
+        }
+    };
+
+    private AdapterView.OnItemClickListener clickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            TextView c = (TextView) view.findViewById(R.id.currency_name);
+            onItemPressed(c.getText().toString());
+        }
+    };
+
+    public void onItemPressed(String name) {
+        if (mListener != null) {
+            mListener.showCurrencyFragment(name);
+        }
+    }
+
+    public QuotesFragment() {
+        // Required empty public constructor
+    }
 
     private boolean toBoolean(String value) {
         return Integer.parseInt(value) != 0;
@@ -114,38 +151,24 @@ public class QuotesFragment extends Fragment {
         }
     }
 
-    @NonNull
     private String urlBuilder() {
         StringBuilder url = new StringBuilder("https://btc-e.com/api/3/ticker/");
         for (Currency tmp : currencies) {
-            url.append(convertName(tmp.getName())).append("-");
+            url.append(MainActivity.convertName(tmp.getName())).append("-");
         }
         if (url.charAt(url.length() - 1) == '-')
             url.deleteCharAt(url.length() - 1);
         return url.toString();
     }
 
-    private DragSortListView.DropListener onDrop = new DragSortListView.DropListener() {
-        @Override
-        public void drop(int from, int to) {
-            if (from != to) {
-                Currency item = adapter.getItem(from);
-                adapter.remove(item);
-                adapter.insert(item, to);
-                //Collections.swap(allCurrencies,allCurrencies.indexOf(item),to);
+    private void stopRequests() {
+        MySingleton.getInstance(getActivity().getApplicationContext()).getRequestQueue().cancelAll(new RequestQueue.RequestFilter() {
+            @Override
+            public boolean apply(Request<?> request) {
+                return true;
             }
-        }
-    };
-
-    private DragSortListView.RemoveListener onRemove = new DragSortListView.RemoveListener() {
-        @Override
-        public void remove(int which) {
-            adapter.remove(adapter.getItem(which));
-        }
-    };
-
-    private static String convertName(String name) {
-        return (name.substring(0, 3) + "_" + name.substring(4, 7)).toLowerCase();
+        });
+        handler.removeCallbacks(makeRequest);
     }
 
     private void updateQuotes(JSONObject jResponse) {
@@ -173,16 +196,9 @@ public class QuotesFragment extends Fragment {
 
     }
 
-    public boolean toggleEditMode(boolean editMode) {
+    public void toggleEditMode() {
         if (!editMode) {
-            editMode = true;
-            handler.removeCallbacks(quotesUpdating);
-            MySingleton.getInstance(getActivity().getApplicationContext()).getRequestQueue().cancelAll(new RequestQueue.RequestFilter() {
-                @Override
-                public boolean apply(Request<?> request) {
-                    return true;
-                }
-            });
+            stopRequests();
             DragSortController controller = new DragSortController(listView);
             controller.setDragHandleId(R.id.drag_handle);
             //controller.setClickRemoveId(R.id.);
@@ -200,38 +216,17 @@ public class QuotesFragment extends Fragment {
             simpleFloatViewManager.setBackgroundColor(Color.TRANSPARENT);
             listView.setFloatViewManager(simpleFloatViewManager);
         } else {
-            handler.post(quotesUpdating);
             saveOrderToDb();
             setShownCurrencies();
             url = urlBuilder();
             jsObjRequest = new JsonObjectRequest
                     (Request.Method.GET, url, null, listener, errorListener);
-            //MySingleton.getInstance(getApplicationContext()).getRequestQueue().start();
             adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
             listView.setAdapter(adapter);
             listView.setOnTouchListener(null);
-            editMode = false;
+            handler.post(makeRequest);
         }
-        return editMode;
-    }
-
-    public QuotesFragment() {
-        // Required empty public constructor
-    }
-
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this quotesFragment
-        return inflater.inflate(R.layout.fragment_quotes, container, false);
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
+        editMode = !editMode;
     }
 
     @Override
@@ -247,9 +242,8 @@ public class QuotesFragment extends Fragment {
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        listView = (DragSortListView) getView().findViewById(R.id.quotes_list);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setCurrencies();
         setShownCurrencies();
         url = urlBuilder();
@@ -258,35 +252,41 @@ public class QuotesFragment extends Fragment {
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        handler.removeCallbacks(quotesUpdating);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this quotesFragment
+        return inflater.inflate(R.layout.fragment_quotes, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        listView = (DragSortListView) getView().findViewById(R.id.quotes_list);
+        listView.setOnItemClickListener(clickListener);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-            handler.post(quotesUpdating);
+        handler.post(makeRequest);
+        Log.d("Quotes","Resumed");
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopRequests();
+        Log.d("Quotes","Paused");
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
+        stopRequests();
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * quotesFragment to allow an interaction in this quotesFragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+        void showCurrencyFragment(String currencyName);
     }
 }

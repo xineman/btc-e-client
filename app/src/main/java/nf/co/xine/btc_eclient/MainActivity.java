@@ -1,28 +1,30 @@
 package nf.co.xine.btc_eclient;
 
 import android.app.FragmentTransaction;
-import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.roughike.bottombar.BottomBar;
 import com.roughike.bottombar.OnMenuTabClickListener;
 
-public class MainActivity extends AppCompatActivity implements QuotesFragment.OnFragmentInteractionListener {
+public class MainActivity extends AppCompatActivity implements QuotesFragment.OnFragmentInteractionListener, CurrencyFragment.CurrencyFragmentListener {
 
-
-    private boolean editMode = false;
-    BottomBar mBottomBar;
-    QuotesFragment quotesFragment;
+    private BottomBar mBottomBar;
+    private QuotesFragment quotesFragment = new QuotesFragment();;
+    private CurrencyFragment currencyFragment = new CurrencyFragment();
+    private String currencyToTrade = "btc_usd";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        quotesFragment = new QuotesFragment();
         mBottomBar = BottomBar.attach(this, savedInstanceState);
         mBottomBar.useFixedMode();
         mBottomBar.setItemsFromMenu(R.menu.activity_main_drawer, new OnMenuTabClickListener() {
@@ -31,6 +33,11 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 if (menuItemId == R.id.nav_quotes) {
                     FragmentTransaction transaction = getFragmentManager().beginTransaction();
                     transaction.replace(R.id.main_content, quotesFragment);
+                    transaction.commit();
+                }
+                if (menuItemId == R.id.nav_trade) {
+                    FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                    transaction.replace(R.id.main_content, currencyFragment);
                     transaction.commit();
                 }
             }
@@ -42,6 +49,16 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 }
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -60,15 +77,26 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit) {
-            editMode = quotesFragment.toggleEditMode(editMode);
+            quotesFragment.toggleEditMode();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onFragmentInteraction(Uri uri) {
+    static String convertName(String name) {
+        return (name.substring(0, 3) + "_" + name.substring(4, 7)).toLowerCase();
+    }
 
+    @Override
+    public String getCurrencyToTrade() {
+        return currencyToTrade;
+    }
+
+    @Override
+    public void showCurrencyFragment(String name) {
+        currencyFragment = new CurrencyFragment();
+        currencyToTrade = name;
+        mBottomBar.selectTabAtPosition(1, true);
     }
 }
