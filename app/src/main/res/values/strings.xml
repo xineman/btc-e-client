@@ -10,11 +10,20 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="edit">Edit</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="min_24h">24h min</string>
     <string name="max_24h">24h max</string>
     <string name="avg_24h">24h avg</string>
     <string name="last_deal">Last deal</string>
     <string name="trade_volume">Volume</string>
+    <string name="ask">Ask</string>
+    <string name="bid">Bid</string>
+    <string name="buy">BUY</string>
+    <string name="sell">SELL</string>
+    <string name="place_order">Create</string>
+    <string name="collapse">Cancel</string>
+    <string name="amount">Amount:</string>
+    <string name="price">Price:</string>
+    <string name="total">Total:</string>
+    <string name="new_order">+</string>
 </resources>

@@ -4,27 +4,32 @@ package nf.co.xine.btc_eclient;
  * Created by uragu on 03.05.2016.
  */
 public class CurrencyOrder {
-    public CurrencyOrder(double price, double amount) {
-        this.amount = amount;
-        this.price = price;
+    public CurrencyOrder(double askPrice, double askAmount, double bidPrice, double bidAmount) {
+        this.askPrice = askPrice;
+        this.askAmount = askAmount;
+        this.bidPrice = bidPrice;
+        this.bidAmount = bidAmount;
     }
 
-    private double price;
-    private double amount;
+    private double askPrice;
+    private double askAmount;
+    private double bidPrice;
+    private double bidAmount;
 
-    public double getPrice() {
-        return price;
+
+    public double getAskPrice() {
+        return askPrice;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public double getAskAmount() {
+        return askAmount;
     }
 
-    public double getAmount() {
-        return amount;
+    public double getBidPrice() {
+        return bidPrice;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
+    public double getBidAmount() {
+        return bidAmount;
     }
 }

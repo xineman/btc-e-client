@@ -13,8 +13,9 @@
 
         <LinearLayout
             style="@style/tiles"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -27,14 +28,14 @@
                 android:id="@+id/min_24h"
                 style="@style/tiles_values"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="48045.61" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <LinearLayout
             style="@style/tiles"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -47,14 +48,14 @@
                 android:id="@+id/max_24h"
                 style="@style/tiles_values"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="49012.34" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
         <LinearLayout
             style="@style/tiles"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -67,83 +68,293 @@
                 android:id="@+id/last_deal"
                 style="@style/tiles_values"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="482.3512" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
+
+    </LinearLayout>
+    <!--
+
         <LinearLayout
-            style="@style/tiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                style="@style/tiles"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/tiles_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/avg_24h" />
+
+                <TextView
+                    android:id="@+id/avg_24h"
+                    style="@style/tiles_values"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="8500" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/tiles"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/tiles_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/last_deal" />
+
+                <TextView
+                    android:id="@+id/last_deall"
+                    style="@style/tiles_values"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="482.3512" />
+            </LinearLayout>
+        </LinearLayout>-->
+
+    <LinearLayout
+        android:id="@+id/place_order_dialog"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:background="#ffffff"
+        android:orientation="vertical"
+        android:padding="5dp"
+        android:visibility="gone">
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_gravity="center">
+
+            <LinearLayout
+                style="@style/tiles"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/tiles_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="USD balance" />
+
+                <TextView
+                    android:id="@+id/buy_balance"
+                    style="@style/tiles_values"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4580" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/tiles"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/tiles_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="BTC balance" />
+
+                <TextView
+                    android:id="@+id/sell_balance"
+                    style="@style/tiles_values"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0.4180" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_buy"
+                style="@style/radio_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/radio_button_background"
+                android:button="@android:color/transparent"
+                android:checked="true"
+                android:text="@string/buy" />
+
+            <RadioButton
+                android:id="@+id/radio_sell"
+                style="@style/radio_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/radio_button_background"
+                android:button="@android:color/transparent"
+                android:checked="false"
+                android:text="@string/sell" />
+        </RadioGroup>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp">
 
             <TextView
                 style="@style/tiles_content"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/trade_volume" />
+                android:layout_height="match_parent"
+                android:layout_alignParentLeft="true"
+                android:gravity="center_vertical"
+                android:text="@string/amount" />
 
-            <TextView
-                android:id="@+id/volume_24h"
-                style="@style/tiles_values"
+            <EditText
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="8500" />
+                android:layout_alignParentRight="true"
+                android:ems="4"
+                android:gravity="end"
+                android:hint="BTC"
+                android:inputType="numberDecimal" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentLeft="true"
+                android:gravity="center_vertical"
+                android:text="@string/price" />
+
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:ems="4"
+                android:gravity="end"
+                android:hint="USD"
+                android:inputType="numberDecimal" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentLeft="true"
+                android:gravity="center_vertical"
+                android:text="@string/total" />
+
+            <TextView
+                style="@style/tiles_values"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="5dp"
+                android:gravity="center_vertical"
+                android:text="400 USD" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/place_order_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/place_order" />
+
+            <Button
+
+                android:id="@+id/collapse_order_menu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/collapse" />
         </LinearLayout>
     </LinearLayout>
 
-    <!--
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:orientation="horizontal"
-        android:paddingBottom="10dp">
-
-        <LinearLayout
-            style="@style/tiles"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                style="@style/tiles_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/avg_24h" />
-
-            <TextView
-                android:id="@+id/avg_24h"
-                style="@style/tiles_values"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="485" />
-        </LinearLayout>
-
-
-    </LinearLayout>-->
-
-    <LinearLayout
-        android:layout_marginTop="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:baselineAligned="false">
 
-        <ListView
-            android:id="@+id/bid_list"
+        <RelativeLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:layout_height="40dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="5dp"
+            android:paddingRight="5dp"
+            android:paddingLeft="5dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="@string/ask"
+                android:gravity="center"/>
+            <Button
+                android:id="@+id/new_buy_order"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/new_order"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true" />
 
-        </ListView>
+        </RelativeLayout>
 
-        <ListView
-            android:id="@+id/ask_list"
+        <RelativeLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_marginLeft="5dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="@string/bid"
+                android:gravity="center"/>
+            <Button
+                android:id="@+id/new_sell_order"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/new_order"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true" />
 
-        </ListView>
+        </RelativeLayout>
     </LinearLayout>
 
+    <ListView
+        android:id="@+id/orders_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    </ListView>
 </LinearLayout>

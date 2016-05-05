@@ -118,7 +118,7 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         this.mode = mode;
     }
 
-    String convertDouble(double val) {
+    static String convertDouble(double val) {
 
         String text = Double.toString(val);
         int integerPlaces = text.indexOf('.');

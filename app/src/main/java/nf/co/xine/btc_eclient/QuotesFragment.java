@@ -5,7 +5,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
@@ -179,7 +179,7 @@ public class QuotesFragment extends Fragment {
         for (Currency cc : currencies) {
             String p = keys.next().toString();
             try {
-                JSONObject object = jResponse.getJSONObject(p);
+                JSONObject object = jResponse.getJSONObject(MainActivity.convertName(cc.getName()));
                 cc.setAsk(object.getDouble("buy"));
                 cc.setBid(object.getDouble("sell"));
             } catch (JSONException e) {
@@ -196,7 +196,7 @@ public class QuotesFragment extends Fragment {
 
     }
 
-    public void toggleEditMode() {
+    public ArrayList<Currency> toggleEditMode() {
         if (!editMode) {
             stopRequests();
             DragSortController controller = new DragSortController(listView);
@@ -227,6 +227,11 @@ public class QuotesFragment extends Fragment {
             handler.post(makeRequest);
         }
         editMode = !editMode;
+        return currencies;
+    }
+
+    public ArrayList<Currency> getCurrencies() {
+        return currencies;
     }
 
     @Override
@@ -234,6 +239,7 @@ public class QuotesFragment extends Fragment {
         super.onAttach(context);
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
+            if (editMode) toggleEditMode();
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
@@ -262,29 +268,34 @@ public class QuotesFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         listView = (DragSortListView) getView().findViewById(R.id.quotes_list);
+        listView.setOnTouchListener(null);
         listView.setOnItemClickListener(clickListener);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
+        listView.setAdapter(adapter);
         handler.post(makeRequest);
-        Log.d("Quotes","Resumed");
+        Log.d("Quotes", "Resumed");
     }
 
     @Override
     public void onPause() {
         super.onPause();
         stopRequests();
-        Log.d("Quotes","Paused");
+        Log.d("Quotes", "Paused");
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
         stopRequests();
+        Log.d("FFFF","Detached");
         mListener = null;
     }
+
 
     public interface OnFragmentInteractionListener {
         void showCurrencyFragment(String currencyName);

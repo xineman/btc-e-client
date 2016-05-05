@@ -1,25 +1,40 @@
 package nf.co.xine.btc_eclient;
 
-import android.app.FragmentTransaction;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.IdRes;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v4.widget.SimpleCursorAdapter;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.Transformation;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.roughike.bottombar.BottomBar;
 import com.roughike.bottombar.OnMenuTabClickListener;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements QuotesFragment.OnFragmentInteractionListener, CurrencyFragment.CurrencyFragmentListener {
 
     private BottomBar mBottomBar;
-    private QuotesFragment quotesFragment = new QuotesFragment();;
+    private QuotesFragment quotesFragment = new QuotesFragment();
+    ;
     private CurrencyFragment currencyFragment = new CurrencyFragment();
     private String currencyToTrade = "btc_usd";
+    private Menu menu;
+    Spinner spinner;
+    ArrayAdapter spinnerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,14 +46,26 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
             @Override
             public void onMenuTabSelected(@IdRes int menuItemId) {
                 if (menuItemId == R.id.nav_quotes) {
-                    FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.main_content, quotesFragment);
                     transaction.commit();
+                    if (menu != null) {
+                        menu.clear();
+                        getMenuInflater().inflate(R.menu.main, menu);
+                    }
                 }
                 if (menuItemId == R.id.nav_trade) {
-                    FragmentTransaction transaction = getFragmentManager().beginTransaction();
+                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.main_content, currencyFragment);
                     transaction.commit();
+                    menu.clear();
+                    getMenuInflater().inflate(R.menu.trade_menu, menu);
+                    MenuItem item = menu.findItem(R.id.spinner);
+                    spinner = (Spinner) MenuItemCompat.getActionView(item);
+                    spinnerAdapter = new ArrayAdapter(getApplicationContext(), R.layout.currency_spinner_item, quotesFragment.getCurrencies());
+                    spinner.setAdapter(spinnerAdapter);
+                    spinner.setOnItemSelectedListener(currencyChangeListener);
+                    spinner.setSelection(getIndex(spinner, currencyToTrade));
                 }
             }
 
@@ -49,7 +76,33 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 }
             }
         });
+        /*
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setSubtitle("mytest");
+        actionBar.setTitle("vogella.com");*/
+
     }
+
+    private int getIndex(Spinner spinner, String myString) {
+        int index = 0;
+
+        for (int i = 0; i < spinner.getCount(); i++) {
+            if (spinner.getItemAtPosition(i).toString().equalsIgnoreCase(myString)) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+/*
+    View.OnClickListener buttonListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (placeOrderDialog.getVisibility() == View.GONE) expand(placeOrderDialog);
+        }
+    };
+*/
+
 
     @Override
     public void onPause() {
@@ -64,7 +117,12 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.trade_menu, menu);
+        MenuItem item = menu.findItem(R.id.spinner);
+        spinner = (Spinner) MenuItemCompat.getActionView(item);
+        menu.clear();
         getMenuInflater().inflate(R.menu.main, menu);
+        this.menu = menu;
         return true;
     }
 
@@ -78,7 +136,12 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit) {
             quotesFragment.toggleEditMode();
+            spinnerAdapter = new ArrayAdapter(getApplicationContext(), R.layout.currency_spinner_item, quotesFragment.getCurrencies());
+            spinner.setAdapter(spinnerAdapter);
             return true;
+        }
+        if (id == R.id.updateOrders) {
+            currencyFragment.updateValues();
         }
 
         return super.onOptionsItemSelected(item);
@@ -91,6 +154,25 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     @Override
     public String getCurrencyToTrade() {
         return currencyToTrade;
+    }
+
+    public AdapterView.OnItemSelectedListener currencyChangeListener = new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            currencyToTrade = parent.getSelectedItem().toString();
+            currencyFragment.setCurrencyToTrade();
+            Log.d("Changed", currencyToTrade);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+
+        }
+    };
+
+    @Override
+    public ArrayList<Currency> getCurrencies() {
+        return quotesFragment.getCurrencies();
     }
 
     @Override

@@ -28,10 +28,14 @@ public class OrdersAdapter extends ArrayAdapter<CurrencyOrder> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.order_list_item, parent, false);
         }
         // Lookup view for data population
-        TextView value = (TextView) convertView.findViewById(R.id.order_value);
-        TextView amount = (TextView) convertView.findViewById(R.id.order_amount);
-        value.setText(String.valueOf(cc.getPrice()));
-        amount.setText(String.valueOf(cc.getAmount()));
+        TextView value = (TextView) convertView.findViewById(R.id.ask_value);
+        TextView amount = (TextView) convertView.findViewById(R.id.ask_amount);
+        TextView value2 = (TextView) convertView.findViewById(R.id.bid_value);
+        TextView amount2 = (TextView) convertView.findViewById(R.id.bid_amount);
+        value.setText(String.valueOf(cc.getAskPrice()));
+        amount.setText(String.valueOf(cc.getAskAmount()));
+        value2.setText(String.valueOf(cc.getBidPrice()));
+        amount2.setText(String.valueOf(cc.getBidAmount()));
         return convertView;
 
     }

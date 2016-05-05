@@ -1,15 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/order_value"/>
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="5dp"
+    android:orientation="horizontal">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:id="@+id/order_amount"/>
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_weight="1"
+        android:background="@drawable/list_border"
+        android:gravity="right"
+        android:orientation="vertical"
+        android:paddingRight="5dp">
+
+        <TextView
+            android:id="@+id/ask_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/ask_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@drawable/list_border"
+        android:orientation="vertical"
+        android:layout_marginLeft="5dp"
+        android:layout_marginStart="5dp"
+        android:paddingLeft="5dp">
+
+        <TextView
+            android:id="@+id/bid_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/bid_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
 
 </LinearLayout>

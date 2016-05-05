@@ -41,4 +41,8 @@ public class Currency {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+
+    public String toString() {
+        return name;
+    }
 }
