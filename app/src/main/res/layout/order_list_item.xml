@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="5dp"
+    android:padding="1dp"
     android:orientation="horizontal">
 
     <LinearLayout
@@ -12,7 +13,7 @@
         android:layout_marginRight="5dp"
         android:layout_weight="1"
         android:background="@drawable/list_border"
-        android:gravity="right"
+        android:gravity="start"
         android:orientation="vertical"
         android:paddingRight="5dp">
 

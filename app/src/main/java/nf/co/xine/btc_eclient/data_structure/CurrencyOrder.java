@@ -1,4 +1,4 @@
-package nf.co.xine.btc_eclient;
+package nf.co.xine.btc_eclient.data_structure;
 
 /**
  * Created by uragu on 03.05.2016.

@@ -1,4 +1,4 @@
-package nf.co.xine.btc_eclient;
+package nf.co.xine.btc_eclient.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -14,7 +14,9 @@ import android.widget.TextView;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+
+import nf.co.xine.btc_eclient.R;
+import nf.co.xine.btc_eclient.data_structure.Currency;
 
 
 public class CustomAdapter extends ArrayAdapter<Currency> {
@@ -25,9 +27,9 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
 
     }
 
-    static final int BROWSING = 1;
-    static final int EDIT = 2;
-    static final int DROPPING = 3;
+    public static final int BROWSING = 1;
+    public static final int EDIT = 2;
+    public static final int DROPPING = 3;
     private int mode;
     private ArrayList<Currency> currencies;
 
@@ -46,7 +48,6 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         View dragH = convertView.findViewById(R.id.drag_handle);
         Switch showPairSwitch = (Switch) convertView.findViewById(R.id.showPairSwitch);
         Animation slideLeft = AnimationUtils.loadAnimation(getContext(), R.anim.slide_left);
-
 
 
         slideLeft.setAnimationListener(new Animation.AnimationListener() {
@@ -118,7 +119,7 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         this.mode = mode;
     }
 
-    static String convertDouble(double val) {
+    public static String convertDouble(double val) {
 
         String text = Double.toString(val);
         int integerPlaces = text.indexOf('.');

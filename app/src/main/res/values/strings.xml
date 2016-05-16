@@ -1,16 +1,9 @@
 <resources>
     <string name="app_name">BTC-E Client</string>
     <string name="action_settings">Settings</string>
-    <string name="showIt">Do IT!</string>
-    <string name="testMsg">Just another test app</string>
-    <string name="receivedHolder">Received JSON</string>
     <string name="title_activity_main">BTC-E Client</string>
-
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="edit">Edit</string>
 
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="min_24h">24h min</string>
     <string name="max_24h">24h max</string>
     <string name="avg_24h">24h avg</string>
@@ -26,4 +19,13 @@
     <string name="price">Price:</string>
     <string name="total">Total:</string>
     <string name="new_order">+</string>
+    <string name="open_balance">Balance:</string>
+    <string name="active_orders">Orders</string>
+    <string name="orders_history">History</string>
+    <string name="Balance">Balance</string>
+    <string name="all_pairs">All pairs</string>
+    <string name="all_types">All types</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

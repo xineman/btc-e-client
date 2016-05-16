@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +29,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import nf.co.xine.btc_eclient.adapters.CustomAdapter;
+import nf.co.xine.btc_eclient.data_structure.Currency;
 
 
 /**
@@ -174,7 +176,8 @@ public class QuotesFragment extends Fragment {
     private void updateQuotes(JSONObject jResponse) {
         setShownCurrencies();
         Parcelable state = listView.onSaveInstanceState();
-        adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
+        if (this.isAdded())
+            adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
         Iterator keys = jResponse.keys();
         for (Currency cc : currencies) {
             String p = keys.next().toString();
@@ -196,7 +199,7 @@ public class QuotesFragment extends Fragment {
 
     }
 
-    public ArrayList<Currency> toggleEditMode() {
+    public void toggleEditMode() {
         if (!editMode) {
             stopRequests();
             DragSortController controller = new DragSortController(listView);
@@ -213,21 +216,20 @@ public class QuotesFragment extends Fragment {
             listView.setOnTouchListener(controller);
             listView.setDragEnabled(true);
             SimpleFloatViewManager simpleFloatViewManager = new SimpleFloatViewManager(listView);
-            simpleFloatViewManager.setBackgroundColor(Color.TRANSPARENT);
+            simpleFloatViewManager.setBackgroundColor(Color.WHITE);
             listView.setFloatViewManager(simpleFloatViewManager);
         } else {
-            saveOrderToDb();
             setShownCurrencies();
-            url = urlBuilder();
-            jsObjRequest = new JsonObjectRequest
-                    (Request.Method.GET, url, null, listener, errorListener);
             adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
             listView.setAdapter(adapter);
             listView.setOnTouchListener(null);
+            saveOrderToDb();
+            url = urlBuilder();
+            jsObjRequest = new JsonObjectRequest
+                    (Request.Method.GET, url, null, listener, errorListener);
             handler.post(makeRequest);
         }
         editMode = !editMode;
-        return currencies;
     }
 
     public ArrayList<Currency> getCurrencies() {
@@ -292,7 +294,7 @@ public class QuotesFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         stopRequests();
-        Log.d("FFFF","Detached");
+        Log.d("FFFF", "Detached");
         mListener = null;
     }
 

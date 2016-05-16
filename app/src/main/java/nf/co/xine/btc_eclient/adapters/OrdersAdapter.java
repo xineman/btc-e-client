@@ -1,4 +1,4 @@
-package nf.co.xine.btc_eclient;
+package nf.co.xine.btc_eclient.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,15 +9,20 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import nf.co.xine.btc_eclient.R;
+import nf.co.xine.btc_eclient.data_structure.CurrencyOrder;
+
 /**
  * Created by uragu on 03.05.2016.
  */
 public class OrdersAdapter extends ArrayAdapter<CurrencyOrder> {
-    public OrdersAdapter(Context context, ArrayList orders) {
+    public OrdersAdapter(Context context, ArrayList orders, String currencyToTrade) {
         super(context, 0, orders);
+        this.currencyToTrade = currencyToTrade;
     }
 
     //private ArrayList
+    private String currencyToTrade;
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -32,11 +37,16 @@ public class OrdersAdapter extends ArrayAdapter<CurrencyOrder> {
         TextView amount = (TextView) convertView.findViewById(R.id.ask_amount);
         TextView value2 = (TextView) convertView.findViewById(R.id.bid_value);
         TextView amount2 = (TextView) convertView.findViewById(R.id.bid_amount);
-        value.setText(String.valueOf(cc.getAskPrice()));
-        amount.setText(String.valueOf(cc.getAskAmount()));
-        value2.setText(String.valueOf(cc.getBidPrice()));
-        amount2.setText(String.valueOf(cc.getBidAmount()));
+        value.setText(String.valueOf(cc.getAskPrice()) + " " + right(currencyToTrade, 3));
+        amount.setText(String.valueOf(cc.getAskAmount()) + " " + currencyToTrade.substring(0, 3));
+        value2.setText(String.valueOf(cc.getBidPrice()) + " " + right(currencyToTrade, 3));
+        amount2.setText(String.valueOf(cc.getBidAmount()) + " " + currencyToTrade.substring(0, 3));
         return convertView;
 
+    }
+
+    public static String right(String value, int length) {
+        // To get right characters from a string, change the begin index.
+        return value.substring(value.length() - length);
     }
 }

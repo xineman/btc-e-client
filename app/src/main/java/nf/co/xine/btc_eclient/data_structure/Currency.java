@@ -1,10 +1,10 @@
-package nf.co.xine.btc_eclient;
+package nf.co.xine.btc_eclient.data_structure;
 
 /**
  * Created by uragu on 01.05.2016.
  */
 public class Currency {
-    Currency(String name, boolean enabled) {
+    public Currency(String name, boolean enabled) {
         this.name = name;
         this.enabled = enabled;
     }

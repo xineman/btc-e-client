@@ -138,7 +138,8 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            android:baselineAligned="false">
 
             <LinearLayout
                 style="@style/tiles"
@@ -148,6 +149,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/buy_balance_header"
                     style="@style/tiles_content"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -158,7 +160,7 @@
                     style="@style/tiles_values"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="4580" />
+                    android:text="2.45142580" />
             </LinearLayout>
 
             <LinearLayout
@@ -169,6 +171,7 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/sell_balance_header"
                     style="@style/tiles_content"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -179,7 +182,7 @@
                     style="@style/tiles_values"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0.4180" />
+                    android:text="0.41804512" />
             </LinearLayout>
         </LinearLayout>
 
@@ -223,6 +226,7 @@
                 android:text="@string/amount" />
 
             <EditText
+                android:id="@+id/amount_edit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
@@ -250,6 +254,7 @@
                 android:ems="4"
                 android:gravity="end"
                 android:hint="USD"
+                android:id="@+id/price_edit"
                 android:inputType="numberDecimal" />
         </RelativeLayout>
 
@@ -266,6 +271,7 @@
 
             <TextView
                 style="@style/tiles_values"
+                android:id="@+id/total_new_order_value"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_alignParentRight="true"
@@ -317,10 +323,10 @@
                 android:gravity="center"/>
             <Button
                 android:id="@+id/new_buy_order"
-                android:layout_width="40dp"
+                android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="@string/new_order"
+                android:text="@string/buy"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true" />
 
@@ -341,20 +347,26 @@
                 android:gravity="center"/>
             <Button
                 android:id="@+id/new_sell_order"
-                android:layout_width="40dp"
+                android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="@string/new_order"
+                android:text="@string/sell"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true" />
 
         </RelativeLayout>
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/orders_list"
+    <android.support.v4.widget.SwipeRefreshLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:id="@+id/orders_list_refresh">
+        <ListView
+            android:id="@+id/orders_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-    </ListView>
+        </ListView>
+    </android.support.v4.widget.SwipeRefreshLayout>
+
 </LinearLayout>
