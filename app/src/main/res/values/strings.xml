@@ -25,6 +25,9 @@
     <string name="Balance">Balance</string>
     <string name="all_pairs">All pairs</string>
     <string name="all_types">All types</string>
+    <string name="order_created">Order successfully created</string>
+    <string name="set_max">[set max]</string>
+    <string name="set_current">[set current]</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

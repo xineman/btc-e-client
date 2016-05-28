@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
@@ -11,11 +12,10 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import nf.co.xine.btc_eclient.R;
+import nf.co.xine.btc_eclient.StaticConverter;
 import nf.co.xine.btc_eclient.data_structure.Currency;
 
 
@@ -30,6 +30,7 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
     public static final int BROWSING = 1;
     public static final int EDIT = 2;
     public static final int DROPPING = 3;
+    public static final int EDITED = 4;
     private int mode;
     private ArrayList<Currency> currencies;
 
@@ -43,10 +44,10 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         }
         // Lookup view for data population
         final TextView name = (TextView) convertView.findViewById(R.id.currency_name);
-        TextView ask = (TextView) convertView.findViewById(R.id.ask);
-        TextView bid = (TextView) convertView.findViewById(R.id.bid);
-        View dragH = convertView.findViewById(R.id.drag_handle);
-        Switch showPairSwitch = (Switch) convertView.findViewById(R.id.showPairSwitch);
+        final TextView ask = (TextView) convertView.findViewById(R.id.ask);
+        final TextView bid = (TextView) convertView.findViewById(R.id.bid);
+        final View dragH = convertView.findViewById(R.id.drag_handle);
+        final Switch showPairSwitch = (Switch) convertView.findViewById(R.id.showPairSwitch);
         Animation slideLeft = AnimationUtils.loadAnimation(getContext(), R.anim.slide_left);
 
 
@@ -67,11 +68,58 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
             }
         });
         Animation slideRight = AnimationUtils.loadAnimation(getContext(), R.anim.slide_right);
+        Animation toBrowsing = AnimationUtils.loadAnimation(getContext(), R.anim.to_browsing);
+        toBrowsing.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                showPairSwitch.setVisibility(View.INVISIBLE);
+                dragH.setVisibility(View.INVISIBLE);
+                ask.setVisibility(View.VISIBLE);
+                bid.setVisibility(View.VISIBLE);
+                mode = BROWSING;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
         switch (mode) {
             case BROWSING: {
                 name.setText(cc.getName());
-                ask.setText(convertDouble(cc.getAsk()));
-                bid.setText(convertDouble(cc.getBid()));
+                ask.setText(StaticConverter.to7PlacesDouble(cc.getAsk()));
+                bid.setText(StaticConverter.to7PlacesDouble(cc.getBid()));
+                break;
+            }
+            case EDITED: {
+                name.setText(cc.getName());
+                if (cc.isEnabled())
+                    showPairSwitch.setChecked(true);
+                else
+                    showPairSwitch.setChecked(false);
+                ask.setText(StaticConverter.to7PlacesDouble(cc.getAsk()));
+                bid.setText(StaticConverter.to7PlacesDouble(cc.getBid()));
+                showPairSwitch.setVisibility(View.VISIBLE);
+                dragH.setVisibility(View.VISIBLE);
+                ask.setVisibility(View.VISIBLE);
+                ask.setAlpha(0f);
+                ask.animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .setListener(null);
+                bid.setVisibility(View.VISIBLE);
+                bid.setAlpha(0f);
+                bid.animate()
+                        .alpha(1f)
+                        .setDuration(300)
+                        .setListener(null);
+                showPairSwitch.startAnimation(toBrowsing);
+                dragH.startAnimation(toBrowsing);
                 break;
             }
             case EDIT: {
@@ -80,13 +128,27 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
                     showPairSwitch.setChecked(true);
                 else
                     showPairSwitch.setChecked(false);
+                ask.setText(StaticConverter.to7PlacesDouble(cc.getAsk()));
+                bid.setText(StaticConverter.to7PlacesDouble(cc.getBid()));
+                ask.setVisibility(View.VISIBLE);
+                ask.setAlpha(1f);
+                ask.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .setListener(null);
+                bid.setVisibility(View.VISIBLE);
+                bid.setAlpha(1f);
+                bid.animate()
+                        .alpha(0f)
+                        .setDuration(300)
+                        .setListener(null);
                 dragH.startAnimation(slideLeft);
                 showPairSwitch.startAnimation(slideLeft);
                 //name.startAnimation(slideRight);
                 showPairSwitch.setVisibility(View.VISIBLE);
                 dragH.setVisibility(View.VISIBLE);
-                ask.setVisibility(View.INVISIBLE);
-                bid.setVisibility(View.INVISIBLE);
+                //ask.setVisibility(View.INVISIBLE);
+                //bid.setVisibility(View.INVISIBLE);
                 break;
             }
             case DROPPING: {
@@ -115,50 +177,5 @@ public class CustomAdapter extends ArrayAdapter<Currency> {
         return convertView;
     }
 
-    void setMode(int mode) {
-        this.mode = mode;
-    }
 
-    public static String convertDouble(double val) {
-
-        String text = Double.toString(val);
-        int integerPlaces = text.indexOf('.');
-        switch (integerPlaces) {
-            case 1: {
-                DecimalFormat df = new DecimalFormat("0.000000");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            case 2: {
-                DecimalFormat df = new DecimalFormat("#.00000");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            case 3: {
-                DecimalFormat df = new DecimalFormat("#.0000");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            case 4: {
-                DecimalFormat df = new DecimalFormat("#.000");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            case 5: {
-                DecimalFormat df = new DecimalFormat("#.00");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            case 6: {
-                DecimalFormat df = new DecimalFormat("#.0");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-            default: {
-                DecimalFormat df = new DecimalFormat("#");
-                df.setRoundingMode(RoundingMode.CEILING);
-                return df.format(val);
-            }
-        }
-    }
 }

@@ -1,36 +1,35 @@
 package nf.co.xine.btc_eclient.data_structure;
 
-/**
- * Created by uragu on 01.05.2016.
- */
 public class Currency {
-    public Currency(String name, boolean enabled) {
+    public Currency(String name, boolean enabled, String ask, String bid) {
         this.name = name;
         this.enabled = enabled;
+        this.ask = ask;
+        this.bid = bid;
     }
 
     private String name;
     private boolean enabled;
-    private double ask;
-    private double bid;
+    private String ask;
+    private String bid;
 
     public String getName() {
         return name;
     }
 
-    public double getAsk() {
+    public String getAsk() {
         return ask;
     }
 
-    public void setAsk(double ask) {
+    public void setAsk(String ask) {
         this.ask = ask;
     }
 
-    public double getBid() {
+    public String getBid() {
         return bid;
     }
 
-    public void setBid(double bid) {
+    public void setBid(String bid) {
         this.bid = bid;
     }
 

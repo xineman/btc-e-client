@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.os.Handler;
@@ -33,13 +34,6 @@ import java.util.Iterator;
 import nf.co.xine.btc_eclient.adapters.CustomAdapter;
 import nf.co.xine.btc_eclient.data_structure.Currency;
 
-
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this quotesFragment must implement the
- * {@link QuotesFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- */
 public class QuotesFragment extends Fragment {
 
     private OnFragmentInteractionListener mListener;
@@ -120,9 +114,9 @@ public class QuotesFragment extends Fragment {
             allCurrencies = new ArrayList<>();
             DbHelper helper = new DbHelper(getActivity());
             SQLiteDatabase db = helper.getWritableDatabase();
-            Cursor cursor = db.query("CURRENCIES", new String[]{"NAME", "IS_ENABLED", "PAIR_INDEX"}, null, null, null, null, "PAIR_INDEX ASC");
+            Cursor cursor = db.query("CURRENCIES", new String[]{"NAME", "IS_ENABLED", "PAIR_INDEX", "ASK_VAL", "BID_VAL"}, null, null, null, null, "PAIR_INDEX ASC");
             while (cursor.moveToNext()) {
-                allCurrencies.add(new Currency(cursor.getString(0), toBoolean(cursor.getString(1))));
+                allCurrencies.add(new Currency(cursor.getString(0), toBoolean(cursor.getString(1)), cursor.getString(3), cursor.getString(4)));
             }
             cursor.close();
             db.close();
@@ -138,13 +132,27 @@ public class QuotesFragment extends Fragment {
         }
     }
 
-    private void saveOrderToDb() {
+    private class SaveCurrenciesToDb extends AsyncTask<Context, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Context... params) {
+            long startTime = System.currentTimeMillis();
+            saveOrderToDb(params[0]);
+
+            long endTime = System.currentTimeMillis();
+
+            System.out.println("That took " + (endTime - startTime) + " milliseconds");
+            return null;
+        }
+    }
+
+    private void saveOrderToDb(Context context) {
         try {
-            DbHelper helper = new DbHelper(getActivity());
+            DbHelper helper = new DbHelper(context);
             SQLiteDatabase db = helper.getWritableDatabase();
-            db.delete("CURRENCIES", null, null);
+            //db.delete("CURRENCIES", null, null);
             for (int i = 0; i < allCurrencies.size(); i++) {
-                DbHelper.insertCurrency(db, allCurrencies.get(i).getName(), allCurrencies.get(i).isEnabled(), i);
+                DbHelper.insertCurrency(db, allCurrencies.get(i).getName(), allCurrencies.get(i).isEnabled(), i, allCurrencies.get(i).getAsk(), allCurrencies.get(i).getBid());
             }
             db.close();
             Log.d("Main act", "Successfully inserted!!!");
@@ -156,7 +164,7 @@ public class QuotesFragment extends Fragment {
     private String urlBuilder() {
         StringBuilder url = new StringBuilder("https://btc-e.com/api/3/ticker/");
         for (Currency tmp : currencies) {
-            url.append(MainActivity.convertName(tmp.getName())).append("-");
+            url.append(StaticConverter.currencyNameToUrlFormat(tmp.getName())).append("-");
         }
         if (url.charAt(url.length() - 1) == '-')
             url.deleteCharAt(url.length() - 1);
@@ -178,17 +186,18 @@ public class QuotesFragment extends Fragment {
         Parcelable state = listView.onSaveInstanceState();
         if (this.isAdded())
             adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
-        Iterator keys = jResponse.keys();
-        for (Currency cc : currencies) {
-            String p = keys.next().toString();
+        for (Currency cc : allCurrencies) {
             try {
-                JSONObject object = jResponse.getJSONObject(MainActivity.convertName(cc.getName()));
-                cc.setAsk(object.getDouble("buy"));
-                cc.setBid(object.getDouble("sell"));
+                if (currencies.contains(cc)) {
+                    JSONObject object = jResponse.getJSONObject(StaticConverter.currencyNameToUrlFormat(cc.getName()));
+                    cc.setAsk(object.getString("buy"));
+                    cc.setBid(object.getString("sell"));
+                }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
+        setShownCurrencies();
 
         if (listView != null) {
             listView.setAdapter(adapter);
@@ -199,7 +208,7 @@ public class QuotesFragment extends Fragment {
 
     }
 
-    public void toggleEditMode() {
+    public boolean toggleEditMode() {
         if (!editMode) {
             stopRequests();
             DragSortController controller = new DragSortController(listView);
@@ -220,16 +229,16 @@ public class QuotesFragment extends Fragment {
             listView.setFloatViewManager(simpleFloatViewManager);
         } else {
             setShownCurrencies();
-            adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.BROWSING);
+            adapter = new CustomAdapter(getActivity(), currencies, CustomAdapter.EDITED);
             listView.setAdapter(adapter);
             listView.setOnTouchListener(null);
-            saveOrderToDb();
             url = urlBuilder();
+            Log.d("URL", url);
             jsObjRequest = new JsonObjectRequest
                     (Request.Method.GET, url, null, listener, errorListener);
-            handler.post(makeRequest);
+            handler.postDelayed(makeRequest, 500);
         }
-        editMode = !editMode;
+        return editMode = !editMode;
     }
 
     public ArrayList<Currency> getCurrencies() {
@@ -287,6 +296,7 @@ public class QuotesFragment extends Fragment {
     public void onPause() {
         super.onPause();
         stopRequests();
+        new SaveCurrenciesToDb().execute(getActivity());
         Log.d("Quotes", "Paused");
     }
 

@@ -1,11 +1,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/currency_parent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="nf.co.xine.btc_eclient.CurrencyFragment">
 
     <LinearLayout
+        android:id="@+id/currency_summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -133,7 +135,7 @@
         android:background="#ffffff"
         android:orientation="vertical"
         android:padding="5dp"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -159,8 +161,7 @@
                     android:id="@+id/buy_balance"
                     style="@style/tiles_values"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="2.45142580" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
             <LinearLayout
@@ -181,12 +182,12 @@
                     android:id="@+id/sell_balance"
                     style="@style/tiles_values"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0.41804512" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
         </LinearLayout>
 
         <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/order_type_radiogroup"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -215,47 +216,94 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp">
+            android:layout_height="wrap_content">
 
             <TextView
-                style="@style/tiles_content"
+                style="@style/new_order_dialog_text"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:gravity="center_vertical"
+                android:layout_centerVertical="true"
                 android:text="@string/amount" />
+
+            <TextView
+                android:id="@+id/amount_edit_currency"
+                style="@style/new_order_dialog_text"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:text="BTC" />
 
             <EditText
                 android:id="@+id/amount_edit"
+                style="@style/new_order_dialog_text"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@id/amount_edit_currency"
+                android:layout_toStartOf="@id/amount_edit_currency"
+                android:gravity="end"
+                android:imeOptions="actionNext"
+                android:inputType="numberDecimal"
+                android:selectAllOnFocus="true" />
+
+            <TextView
+                android:id="@+id/amount_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:ems="4"
-                android:gravity="end"
-                android:hint="BTC"
-                android:inputType="numberDecimal" />
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@id/amount_edit"
+                android:text="@string/set_max" />
+
+
         </RelativeLayout>
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="40dp">
+            android:layout_height="wrap_content">
 
             <TextView
+                style="@style/new_order_dialog_text"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:gravity="center_vertical"
+                android:layout_centerVertical="true"
                 android:text="@string/price" />
 
-            <EditText
-                android:layout_width="wrap_content"
+
+            <TextView
+                android:id="@+id/price_edit_currency"
+                style="@style/new_order_dialog_text"
+                android:layout_width="40dp"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
-                android:ems="4"
-                android:gravity="end"
-                android:hint="USD"
+                android:layout_centerVertical="true"
+                android:text="USD" />
+
+            <EditText
                 android:id="@+id/price_edit"
-                android:inputType="numberDecimal" />
+                style="@style/new_order_dialog_text"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@id/price_edit_currency"
+                android:layout_toStartOf="@id/price_edit_currency"
+                android:gravity="end"
+                android:imeOptions="actionDone"
+                android:inputType="numberDecimal"
+                android:selectAllOnFocus="true" />
+
+            <TextView
+                android:id="@+id/price_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@id/price_edit"
+                android:text="@string/set_current" />
+
+
         </RelativeLayout>
 
         <RelativeLayout
@@ -263,21 +311,32 @@
             android:layout_height="40dp">
 
             <TextView
+                style="@style/new_order_dialog_text"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:gravity="center_vertical"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
                 android:text="@string/total" />
 
             <TextView
-                style="@style/tiles_values"
-                android:id="@+id/total_new_order_value"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:id="@+id/total_new_order_currency"
+                style="@style/new_order_dialog_text"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:text="USD" />
+
+            <TextView
+                android:id="@+id/total_new_order_value"
+                style="@style/new_order_dialog_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
                 android:layout_marginRight="5dp"
-                android:gravity="center_vertical"
-                android:text="400 USD" />
+                android:layout_toLeftOf="@id/total_new_order_currency"
+                android:text="0" />
         </RelativeLayout>
 
         <LinearLayout
@@ -301,66 +360,70 @@
     </LinearLayout>
 
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:baselineAligned="false">
+        android:baselineAligned="false"
+        android:orientation="horizontal">
 
         <RelativeLayout
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="40dp"
             android:layout_marginEnd="5dp"
             android:layout_marginRight="5dp"
-            android:paddingRight="5dp"
-            android:paddingLeft="5dp">
+            android:layout_weight="1"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:text="@string/ask"
-                android:gravity="center"/>
+                android:gravity="center"
+                android:text="@string/ask" />
+
             <Button
                 android:id="@+id/new_buy_order"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/buy"
                 android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true" />
+                android:layout_alignParentRight="true"
+                android:layout_gravity="center"
+                android:text="@string/buy" />
 
         </RelativeLayout>
 
         <RelativeLayout
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="match_parent"
-            android:layout_marginStart="5dp"
             android:layout_marginLeft="5dp"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
             android:paddingLeft="5dp"
             android:paddingRight="5dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:text="@string/bid"
-                android:gravity="center"/>
+                android:gravity="center"
+                android:text="@string/bid" />
+
             <Button
                 android:id="@+id/new_sell_order"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/sell"
                 android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true" />
+                android:layout_alignParentRight="true"
+                android:layout_gravity="center"
+                android:text="@string/sell" />
 
         </RelativeLayout>
     </LinearLayout>
 
     <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/orders_list_refresh"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/orders_list_refresh">
+        android:layout_height="wrap_content">
+
         <ListView
             android:id="@+id/orders_list"
             android:layout_width="match_parent"

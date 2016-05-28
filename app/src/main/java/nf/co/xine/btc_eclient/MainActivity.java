@@ -1,8 +1,10 @@
 package nf.co.xine.btc_eclient;
 
+import android.os.AsyncTask;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -18,6 +20,7 @@ import com.roughike.bottombar.BottomBar;
 import com.roughike.bottombar.OnMenuTabClickListener;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import nf.co.xine.btc_eclient.data_structure.Currency;
 
@@ -33,18 +36,25 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     private QuotesFragment quotesFragment = new QuotesFragment();
     private CurrencyFragment currencyFragment = new CurrencyFragment();
     private ProfileFragment profileFragment = new ProfileFragment();
-    private String currencyToTrade = "btc_usd";
+    private String currencyToTrade = "BTC/USD";
     private Menu menu;
     private Spinner spinner;
     private ArrayAdapter spinnerAdapter;
     private String aKey = ""; //API-key
     private String aSecret = ""; //SECRET-key
+    private TradeApi api;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d("nonce", String.valueOf(System.currentTimeMillis() / 100L - 14625283416L));
+        try {
+            api = new TradeApi(aKey, aSecret);
+            new GetPublicInfo().execute();
+            Log.d("nonce", String.valueOf(System.currentTimeMillis() / 100L - 14625283416L));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         mBottomBar = BottomBar.attach(this, savedInstanceState);
         mBottomBar.useFixedMode();
         mBottomBar.setItemsFromMenu(R.menu.activity_main_drawer, new OnMenuTabClickListener() {
@@ -63,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.main_content, currencyFragment, "Trade");
                     transaction.commit();
+                    getSupportFragmentManager().executePendingTransactions();
                     menu.clear();
                     getMenuInflater().inflate(R.menu.trade_menu, menu);
                     MenuItem item = menu.findItem(R.id.spinner);
@@ -98,6 +109,19 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
         actionBar.setSubtitle("mytest");
         actionBar.setTitle("vogella.com");*/
+
+    }
+
+    // TODO: 21.05.2016 Save received info to DB, ensure that info available before using it
+    private class GetPublicInfo extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.d("Info", String.valueOf(api.info.isSuccess()));
+            api.info.runMethod();
+            api.info.switchNextPair();
+            return null;
+        }
 
     }
 
@@ -154,7 +178,11 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_edit) {
             if (getSupportFragmentManager().findFragmentByTag("Quotes") != null && getSupportFragmentManager().findFragmentByTag("Quotes").isVisible()) {
-                quotesFragment.toggleEditMode();
+                if (quotesFragment.toggleEditMode()) {
+                    menu.getItem(0).setIcon(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_done_white_24dp, null));
+                } else {
+                    menu.getItem(0).setIcon(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_mode_edit_white_24dp, null));
+                }
                 spinnerAdapter = new ArrayAdapter(getApplicationContext(), R.layout.currency_spinner_item, quotesFragment.getCurrencies());
                 spinner.setAdapter(spinnerAdapter);
             }
@@ -164,9 +192,6 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         return super.onOptionsItemSelected(item);
     }
 
-    static String convertName(String name) {
-        return (name.substring(0, 3) + "_" + name.substring(4, 7)).toLowerCase();
-    }
 
     @Override
     public String getCurrencyToTrade() {
@@ -178,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             currencyToTrade = parent.getSelectedItem().toString();
             if (getSupportFragmentManager().findFragmentByTag("Trade") != null && getSupportFragmentManager().findFragmentByTag("Trade").isVisible())
-                currencyFragment.setCurrencyToTrade(currencyToTrade);
+                currencyFragment.updateCurrencyToTrade();
             Log.d("Changed", currencyToTrade);
         }
 
@@ -195,7 +220,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     @Override
     public void showCurrencyFragment(String name) {
-        currencyFragment = new CurrencyFragment();
+        if (!currencyToTrade.equals(name))
+            currencyFragment = new CurrencyFragment();
         currencyToTrade = name;
         mBottomBar.selectTabAtPosition(1, true);
     }
@@ -211,6 +237,6 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     }
 
     public TradeApi getApi() {
-        return profileFragment.getApi();
+        return api;
     }
 }

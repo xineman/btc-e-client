@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dialog_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:drawable/toast_frame"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/received_label"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Received: "/>
+
+    <TextView
+        android:id="@+id/received_currency"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true" />
+
+    <TextView
+        android:id="@+id/received_value"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/received_currency"
+        android:text="0.002" />
+
+    <TextView
+        android:id="@+id/remains_label"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/received_label"
+        android:text="Created order for: " />
+
+    <TextView
+        android:id="@+id/remains_currency"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/received_currency" />
+
+    <TextView
+        android:id="@+id/remains_value"
+        style="@style/toast_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/received_value"
+        android:layout_toLeftOf="@id/remains_currency"
+        android:text="0.22" />
+
+</RelativeLayout>

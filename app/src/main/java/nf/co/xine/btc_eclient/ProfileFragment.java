@@ -61,7 +61,7 @@ public class ProfileFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         try {
-            t = new TradeApi(mListener.getKey(), mListener.getSecret());
+            t = mListener.getApi();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -99,37 +99,33 @@ public class ProfileFragment extends Fragment {
         //new updateDataTask().execute(t);
     }
 
-    public TradeApi getApi() {
-        return t;
-    }
-
     @Override
     public void onDetach() {
         super.onDetach();
         mListener = null;
     }
-/*
-    public class updateDataTask extends AsyncTask<TradeApi, Void, Void> {
 
-        @Override
-        protected Void doInBackground(TradeApi... apis) {
-            apis[0].activeOrders.runMethod();
-            apis[0].transHistory.runMethod();
-            apis[0].getInfo.runMethod();
-            return null;
-        }
+    /*
+        public class updateDataTask extends AsyncTask<TradeApi, Void, Void> {
 
-        @Override
-        protected void onPostExecute(Void res) {
-            String balance = "Balance: " + String.format("%.4f", Double.parseDouble(t.getInfo.getBalance("USD"))) + " USD " +
-                    String.format("%.4f", Double.parseDouble(t.getInfo.getBalance("BTC"))) + " BTC ";
-            balanceTextView.setText(balance);
+            @Override
+            protected Void doInBackground(TradeApi... apis) {
+                apis[0].activeOrders.runMethod();
+                apis[0].transHistory.runMethod();
+                apis[0].getInfo.runMethod();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void res) {
+                String balance = "Balance: " + String.format("%.4f", Double.parseDouble(t.getInfo.getBalance("USD"))) + " USD " +
+                        String.format("%.4f", Double.parseDouble(t.getInfo.getBalance("BTC"))) + " BTC ";
+                balanceTextView.setText(balance);
+            }
         }
-    }
-*/
+    */
     public interface OnFragmentInteractionListener {
-        String getKey();
 
-        String getSecret();
+        TradeApi getApi();
     }
 }
