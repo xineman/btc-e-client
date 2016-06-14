@@ -1,4 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/currency_parent"
     android:layout_width="match_parent"
@@ -6,10 +7,12 @@
     android:orientation="vertical"
     tools:context="nf.co.xine.btc_eclient.CurrencyFragment">
 
+
     <LinearLayout
         android:id="@+id/currency_summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:baselineAligned="false"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -135,7 +138,7 @@
         android:background="#ffffff"
         android:orientation="vertical"
         android:padding="5dp"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -418,6 +421,15 @@
 
         </RelativeLayout>
     </LinearLayout>
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        app:indicator="BallPulseSync"
+        android:visibility="gone"
+        app:indicator_color="@color/colorPrimary" />
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/orders_list_refresh"

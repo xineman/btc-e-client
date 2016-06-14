@@ -4,12 +4,14 @@ package nf.co.xine.btc_eclient;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.assist.TradeApi;
@@ -34,12 +36,15 @@ public class TransactionsHistoryFragment extends Fragment {
     private ListView transactionsList;
     private SwipeRefreshLayout swipeRefreshLayout;
     private updateHistory update;
+    private String test = "1";
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        if (savedInstanceState != null)
+            test = savedInstanceState.getString("TEST");
         return inflater.inflate(R.layout.fragment_orders_history, container, false);
     }
 
@@ -58,6 +63,12 @@ public class TransactionsHistoryFragment extends Fragment {
     public void onResume() {
         super.onResume();
         transactionsList = (ListView) getView().findViewById(R.id.orders_history_list);
+        Parcelable state = transactionsList.onSaveInstanceState();
+        transactions = mListener.getTransactions();
+        if (transactions != null) {
+            historyAdapter = new TransactionsHistoryAdapter(getActivity(), transactions);
+            transactionsList.setAdapter(historyAdapter);
+        }
         swipeRefreshLayout = (SwipeRefreshLayout) getView().findViewById(R.id.orders_history_refresh);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -66,6 +77,8 @@ public class TransactionsHistoryFragment extends Fragment {
             }
         });
         t = mListener.getApi();
+        Log.d("History test", test);
+        transactionsList.onRestoreInstanceState(state);
         (update = new updateHistory()).execute(t);
     }
 
@@ -91,7 +104,7 @@ public class TransactionsHistoryFragment extends Fragment {
                         t.transHistory.getCurrentTimestamp()));
             }
             swipeRefreshLayout.setRefreshing(false);
-            if (!update.isCancelled()) {
+            if (isAdded()) {
                 historyAdapter = new TransactionsHistoryAdapter(getActivity(), transactions);
                 transactionsList.setAdapter(historyAdapter);
             }
@@ -99,15 +112,27 @@ public class TransactionsHistoryFragment extends Fragment {
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        test = "saved";
+        outState.putString("TEST", test);
+    }
+
+    @Override
     public void onDetach() {
         super.onDetach();
+        mListener.saveTransactions(transactions);
         mListener = null;
-        update.cancel(true);
-        Log.d("Active", "Detached");
+        //update.cancel(true);
+        Log.d("History", "Detached");
     }
 
     public interface OnFragmentInteractionListener {
         TradeApi getApi();
+
+        void saveTransactions(ArrayList<Transaction> transactions);
+
+        ArrayList<Transaction> getTransactions();
 
         String getCurrencyToTrade();
     }

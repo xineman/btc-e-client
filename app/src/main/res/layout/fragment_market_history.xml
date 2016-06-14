@@ -7,7 +7,7 @@
     android:orientation="vertical">
 
     <com.wang.avi.AVLoadingIndicatorView
-        android:id="@+id/active_orders_progress_bar"
+        android:id="@+id/market_orders_progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
@@ -15,41 +15,20 @@
         app:indicator="BallPulseSync"
         app:indicator_color="@color/colorPrimary" />
 
-
-    <LinearLayout
-        android:id="@+id/active_orders_spinners"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="5dp">
-
-        <Spinner
-            android:id="@+id/currency_filter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <Spinner
-            android:id="@+id/order_type_filter"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-
-
     <android.support.v4.widget.SwipeRefreshLayout
-        android:id="@+id/active_orders_refresh"
+        android:id="@+id/market_orders_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="nf.co.xine.btc_eclient.ActiveOrdersFragment">
-        <LinearLayout
+        <ListView
+            android:id="@+id/market_orders_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        <!--<LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-            <ListView
-                android:id="@+id/active_orders_list"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+
 
             <ScrollView
                 android:id="@android:id/empty"
@@ -65,7 +44,7 @@
                     android:text="@string/no_active_orders"
                     android:visibility="gone" />
             </ScrollView>
-        </LinearLayout>
+        </LinearLayout>-->
 
 
 

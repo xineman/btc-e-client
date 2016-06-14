@@ -20,9 +20,12 @@ import com.roughike.bottombar.BottomBar;
 import com.roughike.bottombar.OnMenuTabClickListener;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 import nf.co.xine.btc_eclient.data_structure.Currency;
+import nf.co.xine.btc_eclient.data_structure.CurrencyBalance;
+import nf.co.xine.btc_eclient.data_structure.CurrencyOrder;
+import nf.co.xine.btc_eclient.data_structure.MyOrder;
+import nf.co.xine.btc_eclient.data_structure.Transaction;
 
 
 public class MainActivity extends AppCompatActivity implements QuotesFragment.OnFragmentInteractionListener,
@@ -30,12 +33,16 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         ProfileFragment.OnFragmentInteractionListener,
         ActiveOrdersFragment.OnFragmentInteractionListener,
         TransactionsHistoryFragment.OnFragmentInteractionListener,
-        BalanceFragment.OnFragmentInteractionListener {
+        BalanceFragment.OnFragmentInteractionListener,
+        MarketFragment.OnFragmentInteractionListener,
+        MarketHistoryFragment.OnFragmentInteractionListener,
+        ChartsFragment.OnFragmentInteractionListener {
 
     private BottomBar mBottomBar;
     private QuotesFragment quotesFragment = new QuotesFragment();
     private CurrencyFragment currencyFragment = new CurrencyFragment();
-    private ProfileFragment profileFragment = new ProfileFragment();
+    private MarketFragment marketFragment = new MarketFragment();
+    private ProfileFragment profileFragment;
     private String currencyToTrade = "BTC/USD";
     private Menu menu;
     private Spinner spinner;
@@ -44,6 +51,14 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     private String aSecret = ""; //SECRET-key
     private TradeApi api;
 
+    private ArrayList<Transaction> transactions;
+    private ArrayList<MyOrder> orders;
+    private ArrayList<String> pairs;
+    private ArrayList<String> types;
+    private ArrayList<CurrencyBalance> balance;
+    private ArrayList<CurrencyOrder> marketOrders;
+    private ArrayList<String> marketSummary;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         try {
             api = new TradeApi(aKey, aSecret);
             new GetPublicInfo().execute();
-            Log.d("nonce", String.valueOf(System.currentTimeMillis() / 100L - 14625283416L));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,7 +85,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 }
                 if (menuItemId == R.id.nav_trade) {
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                    transaction.replace(R.id.main_content, currencyFragment, "Trade");
+                    transaction.replace(R.id.main_content, marketFragment, "Trade");
+                    //transaction.addToBackStack(null);
                     transaction.commit();
                     getSupportFragmentManager().executePendingTransactions();
                     menu.clear();
@@ -85,9 +100,11 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 }
 
                 if (menuItemId == R.id.nav_profile) {
-                    profileFragment = new ProfileFragment();
+                    if (profileFragment == null)
+                        profileFragment = new ProfileFragment();
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.main_content, profileFragment, "Profile");
+                    //transaction.addToBackStack(null);
                     transaction.commit();
                     menu.clear();
                     getMenuInflater().inflate(R.menu.main, menu);
@@ -203,7 +220,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             currencyToTrade = parent.getSelectedItem().toString();
             if (getSupportFragmentManager().findFragmentByTag("Trade") != null && getSupportFragmentManager().findFragmentByTag("Trade").isVisible())
-                currencyFragment.updateCurrencyToTrade();
+                marketFragment.updateCurrencyToTrade();
+            //currencyFragment.getUpdateCurrency().execute();
             Log.d("Changed", currencyToTrade);
         }
 
@@ -220,23 +238,65 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     @Override
     public void showCurrencyFragment(String name) {
-        if (!currencyToTrade.equals(name))
-            currencyFragment = new CurrencyFragment();
+        /*if (!currencyToTrade.equals(name))
+            currencyFragment = new CurrencyFragment();*/
         currencyToTrade = name;
         mBottomBar.selectTabAtPosition(1, true);
     }
 
-    @Override
-    public String getKey() {
-        return aKey;
-    }
-
-    @Override
-    public String getSecret() {
-        return aSecret;
-    }
-
     public TradeApi getApi() {
         return api;
+    }
+
+    @Override
+    public void saveMarketOrders(ArrayList<CurrencyOrder> orders, ArrayList<String> summary) {
+        marketOrders = orders;
+        marketSummary = summary;
+    }
+
+    @Override
+    public ArrayList<CurrencyOrder> getOrders() {
+        return marketOrders;
+    }
+
+    @Override
+    public ArrayList<String> getSummary() {
+        return marketSummary;
+    }
+
+    @Override
+    public void saveBalance(ArrayList<CurrencyBalance> balances) {
+        balance = balances;
+    }
+
+    @Override
+    public ArrayList<CurrencyBalance> getBalance() {
+        return balance;
+    }
+
+    public void saveTransactions(ArrayList<Transaction> transactions) {
+        this.transactions = transactions;
+    }
+
+    public ArrayList<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void saveActiveOrders(ArrayList<MyOrder> orders, ArrayList<String> pairs, ArrayList<String> types) {
+        this.orders = orders;
+        this.types = types;
+        this.pairs = pairs;
+    }
+
+    public ArrayList<MyOrder> getActiveOrders() {
+        return orders;
+    }
+
+    public ArrayList<String> getPairs() {
+        return pairs;
+    }
+
+    public ArrayList<String> getTypes() {
+        return types;
     }
 }

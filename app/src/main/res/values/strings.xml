@@ -28,6 +28,8 @@
     <string name="order_created">Order successfully created</string>
     <string name="set_max">[set max]</string>
     <string name="set_current">[set current]</string>
+    <string name="chart">Chart</string>
+    <string name="no_active_orders">You have no active orders</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

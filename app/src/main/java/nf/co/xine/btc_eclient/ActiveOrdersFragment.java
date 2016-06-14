@@ -12,10 +12,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.assist.TradeApi;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import java.util.ArrayList;
 
@@ -41,6 +44,9 @@ public class ActiveOrdersFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     private Spinner currencyFilter;
     private Spinner orderTypeFilter;
+    private AVLoadingIndicatorView progressBar;
+    private LinearLayout spinners;
+    private TextView noOrders;
     private ArrayList<String> activePairs = new ArrayList<>();
     private ArrayList<String> activeOrdersTypes = new ArrayList<>();
 
@@ -68,6 +74,9 @@ public class ActiveOrdersFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.d("ActiveOrdersFragment", "Resumed");
+        noOrders = (TextView) getView().findViewById(R.id.no_orders_text);
+        progressBar = (AVLoadingIndicatorView) getView().findViewById(R.id.active_orders_progress_bar);
+        spinners = (LinearLayout) getView().findViewById(R.id.active_orders_spinners);
         currencyFilter = (Spinner) getView().findViewById(R.id.currency_filter);
         currencyFilter.setOnItemSelectedListener(currencyChangeListener);
         orderTypeFilter = (Spinner) getView().findViewById(R.id.order_type_filter);
@@ -90,12 +99,28 @@ public class ActiveOrdersFragment extends Fragment {
                 (updateActiveOrders = new UpdateActiveOrders()).execute(t);
             }
         });
+
+        //resuming fragment
+        if (mListener.getTypes() != null && mListener.getPairs() != null) {
+            currencyFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, mListener.getPairs()));
+            orderTypeFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, mListener.getTypes()));
+        }
+
+        if (mListener.getActiveOrders() != null) {
+            activeOrdersAdapter = new ActiveOrdersAdapter(getActivity(), mListener.getActiveOrders());
+            activeOrdersList.setAdapter(activeOrdersAdapter);
+        } else {
+            progressBar.setVisibility(View.VISIBLE);
+            spinners.setVisibility(View.GONE);
+            activeOrdersList.setVisibility(View.GONE);
+        }
+
         t = mListener.getApi();
         activePairs.add(getResources().getString(R.string.all_pairs));
         activeOrdersTypes.add(getResources().getString(R.string.all_types));
         //TODO: replace this with db cache method.
-        currencyFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activePairs));
-        orderTypeFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activeOrdersTypes));
+//        currencyFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activePairs));
+//        orderTypeFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activeOrdersTypes));
         (updateActiveOrders = new UpdateActiveOrders()).execute(t);
     }
 
@@ -154,19 +179,29 @@ public class ActiveOrdersFragment extends Fragment {
             }
             swipeRefreshLayout.setRefreshing(false);
             if (!isCancelled()) {
-                currencyFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activePairs));
-                if (activePairs.contains(pair)) {
-                    Log.d("Contains", String.valueOf(MainActivity.getIndex(currencyFilter, pair)));
-                    currencyToTrade = pair;
-                    currencyFilter.setSelection(MainActivity.getIndex(currencyFilter, pair));
+                if (activeOrders.size() == 0) {
+                    progressBar.setVisibility(View.GONE);
+                    noOrders.setVisibility(View.VISIBLE);
+                    //activeOrdersList.setEmptyView(noOrders);
+                } else {
+                    currencyFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activePairs));
+                    if (activePairs.contains(pair)) {
+                        Log.d("Contains", String.valueOf(MainActivity.getIndex(currencyFilter, pair)));
+                        currencyToTrade = pair;
+                        currencyFilter.setSelection(MainActivity.getIndex(currencyFilter, pair));
+                    }
+                    orderTypeFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activeOrdersTypes));
+                    if (activeOrdersTypes.contains(type)) {
+                        selectedType = type;
+                        orderTypeFilter.setSelection(MainActivity.getIndex(orderTypeFilter, type));
+                    }
+                    activeOrdersAdapter = new ActiveOrdersAdapter(getActivity(), activeOrders);
+                    activeOrdersList.setAdapter(activeOrdersAdapter);
+                    progressBar.setVisibility(View.GONE);
+                    spinners.setVisibility(View.VISIBLE);
+                    activeOrdersList.setVisibility(View.VISIBLE);
+                    noOrders.setVisibility(View.GONE);
                 }
-                orderTypeFilter.setAdapter(new ArrayAdapter(getActivity(), R.layout.currency_spinner_item, activeOrdersTypes));
-                if (activeOrdersTypes.contains(type)) {
-                    selectedType = type;
-                    orderTypeFilter.setSelection(MainActivity.getIndex(orderTypeFilter, type));
-                }
-                activeOrdersAdapter = new ActiveOrdersAdapter(getActivity(), activeOrders);
-                activeOrdersList.setAdapter(activeOrdersAdapter);
             }
         }
     }
@@ -174,6 +209,7 @@ public class ActiveOrdersFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        mListener.saveActiveOrders(activeOrders, activePairs, activeOrdersTypes);
         mListener = null;
         updateActiveOrders.cancel(true);
         Log.d("Active", "Detached");
@@ -181,6 +217,14 @@ public class ActiveOrdersFragment extends Fragment {
 
     public interface OnFragmentInteractionListener {
         TradeApi getApi();
+
+        void saveActiveOrders(ArrayList<MyOrder> orders, ArrayList<String> pairs, ArrayList<String> types);
+
+        ArrayList<MyOrder> getActiveOrders();
+
+        ArrayList<String> getPairs();
+
+        ArrayList<String> getTypes();
 
         ArrayList<Currency> getCurrencies();
 

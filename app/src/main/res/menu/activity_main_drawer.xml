@@ -9,7 +9,7 @@
         <item
             android:id="@+id/nav_trade"
             android:icon="@drawable/ic_autorenew_white_24dp"
-            android:title="Trade" />
+            android:title="Market" />
     </group>
 
     <item

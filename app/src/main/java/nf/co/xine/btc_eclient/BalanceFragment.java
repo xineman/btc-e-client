@@ -24,6 +24,7 @@ public class BalanceFragment extends Fragment {
     private OnFragmentInteractionListener mListener;
     private ListView balanceList;
     private TradeApi t;
+    private ArrayList<CurrencyBalance> balances;
     private UpdateBalance updateBalance;
     private SwipeRefreshLayout swipeRefreshLayout;
 
@@ -61,6 +62,11 @@ public class BalanceFragment extends Fragment {
                 (updateBalance = new UpdateBalance()).execute(t);
             }
         });
+        balances = mListener.getBalance();
+        if (balances != null) {
+            BalanceAdapter adapter = new BalanceAdapter(getActivity(), balances);
+            balanceList.setAdapter(adapter);
+        }
         t = mListener.getApi();
         (updateBalance = new UpdateBalance()).execute(t);
     }
@@ -76,7 +82,7 @@ public class BalanceFragment extends Fragment {
         @Override
         protected void onPostExecute(Void res) {
             Log.d("Balance", "Updating UI");
-            ArrayList<CurrencyBalance> balances = new ArrayList<>();
+            balances = new ArrayList<>();
             /*balances.add(new CurrencyBalance("USD", "20.26"));*/
 
             balances.add(new CurrencyBalance("BTC", t.getInfo.getBalance("BTC") + " BTC"));
@@ -105,6 +111,7 @@ public class BalanceFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        mListener.saveBalance(balances);
         mListener = null;
         updateBalance.cancel(true);
         Log.d("Balance", "Detached");
@@ -112,5 +119,9 @@ public class BalanceFragment extends Fragment {
 
     public interface OnFragmentInteractionListener {
         TradeApi getApi();
+
+        void saveBalance(ArrayList<CurrencyBalance> balances);
+
+        ArrayList<CurrencyBalance> getBalance();
     }
 }

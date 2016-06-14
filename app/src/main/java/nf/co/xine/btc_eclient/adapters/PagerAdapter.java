@@ -9,12 +9,12 @@ import nf.co.xine.btc_eclient.ActiveOrdersFragment;
 import nf.co.xine.btc_eclient.BalanceFragment;
 import nf.co.xine.btc_eclient.TransactionsHistoryFragment;
 
-public class PagerAdapter extends FragmentStatePagerAdapter {
+public class PagerAdapter extends FragmentPagerAdapter {
     int mNumOfTabs;
 
-    public PagerAdapter(FragmentManager fm, int NumOfTabs) {
+    public PagerAdapter(FragmentManager fm) {
         super(fm);
-        this.mNumOfTabs = NumOfTabs;
+        this.mNumOfTabs = 3;
     }
 
     @Override
@@ -31,6 +31,7 @@ public class PagerAdapter extends FragmentStatePagerAdapter {
                 return null;
         }
     }
+
     @Override
     public CharSequence getPageTitle(int position) {
         switch (position) {

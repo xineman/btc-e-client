@@ -20,6 +20,7 @@ import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -38,6 +39,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.assist.TradeApi;
+import com.wang.avi.AVLoadingIndicatorView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +53,6 @@ import nf.co.xine.btc_eclient.data_structure.CurrencyOrder;
 public class CurrencyFragment extends Fragment {
 
     private CurrencyFragmentListener mListener;
-
     private ListView ordersView;
     private TextView min24;
     private TextView max24;
@@ -77,6 +78,7 @@ public class CurrencyFragment extends Fragment {
     private View summaryLayout;
     private TextView priceLabel;
     private TextView amountLabel;
+    private AVLoadingIndicatorView progressBar;
 
     private UpdateCurrencyBalance updateCurrencyBalance;
     private UpdateOrders updateOrders;
@@ -214,12 +216,14 @@ public class CurrencyFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+        Log.d("Currency", "OnCreateView");
         return inflater.inflate(R.layout.fragment_currency, container, false);
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        Log.d("Currency", "OnAttach");
         if (context instanceof CurrencyFragmentListener) {
             mListener = (CurrencyFragmentListener) context;
 
@@ -235,6 +239,7 @@ public class CurrencyFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         try {
             tradeApi = mListener.getApi();
+            currencyToTrade = mListener.getCurrencyToTrade();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -246,8 +251,8 @@ public class CurrencyFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (orders != null && summary != null)
-            new SaveInfoToDb().execute(getActivity());
+        /*if (orders != null && summary != null)
+            new SaveInfoToDb().execute(getActivity());*/
         updateCurrencyBalance.cancel(true);
         updateOrders.cancel(true);
         updateSummary.cancel(true);
@@ -257,11 +262,17 @@ public class CurrencyFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        swipeRefreshLayout.setRefreshing(true);
-        if (orders == null || summary == null) {
-            //new InitValuesFromDb().execute();
-        } else
+        orders = mListener.getOrders();
+        summary = mListener.getSummary();
+        updateInfo();
+        if (orders != null && summary != null
+                && StaticConverter.currencyNameToUrlFormat(summary.get(0)).equals(StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()))) {
             updateUI();
+            TypedValue typed_value = new TypedValue();
+            getActivity().getTheme().resolveAttribute(android.support.v7.appcompat.R.attr.actionBarSize, typed_value, true);
+            swipeRefreshLayout.setProgressViewOffset(false, 0, getResources().getDimensionPixelSize(typed_value.resourceId));
+            swipeRefreshLayout.setRefreshing(true);
+        } else progressBar.setVisibility(View.VISIBLE);
         setupUI(getView().findViewById(R.id.currency_parent));
         Log.d("Currency", "Resumed");
     }
@@ -269,11 +280,13 @@ public class CurrencyFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
+        mListener.saveMarketOrders(orders, summary);
         mListener = null;
     }
 
     private void inflateAllTheViews() {
         if (getView() != null) {
+            progressBar = (AVLoadingIndicatorView) getView().findViewById(R.id.progress_bar);
             swipeRefreshLayout = (SwipeRefreshLayout) getView().findViewById(R.id.orders_list_refresh);
             swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
@@ -575,11 +588,10 @@ public class CurrencyFragment extends Fragment {
 
     private void updateUI() {
         OrdersAdapter ordersAdapter = new OrdersAdapter(getActivity(), orders, mListener.getCurrencyToTrade());
-        swipeRefreshLayout.setRefreshing(false);
         ordersView.setAdapter(ordersAdapter);
-        min24.setText(StaticConverter.to7PlacesDouble(summary.get(1)));
-        max24.setText(StaticConverter.to7PlacesDouble(summary.get(2)));
-        last.setText(StaticConverter.to7PlacesDouble(summary.get(3)));
+        min24.setText(StaticConverter.doubleToString(Double.parseDouble(summary.get(1))));
+        max24.setText(StaticConverter.doubleToString(Double.parseDouble(summary.get(2))));
+        last.setText(StaticConverter.doubleToString(Double.parseDouble(summary.get(3))));
     }
 
     //starting asyncTasks to fetch data from server
@@ -587,7 +599,6 @@ public class CurrencyFragment extends Fragment {
         totalCurrency.setText(StaticConverter.right(currencyToTrade, 3));
         priceCurrency.setText(StaticConverter.right(currencyToTrade, 3));
         amountCurrency.setText(currencyToTrade.substring(0, 3));
-        swipeRefreshLayout.setRefreshing(true);
         currencyToTrade = mListener.getCurrencyToTrade();
         tradeApi.getInfo.resetParams();
         tradeApi.depth.resetParams();
@@ -717,7 +728,7 @@ public class CurrencyFragment extends Fragment {
 
         @Override
         protected void onPostExecute(Void res) {
-            if (!isCancelled()) {
+            if (isAdded()) {
                 try {
                     min24.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.ticker.getCurrentLow())));
                     max24.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.ticker.getCurrentHigh())));
@@ -763,6 +774,7 @@ public class CurrencyFragment extends Fragment {
                     ordersView.setAdapter(ordersAdapter);
                     ordersView.onRestoreInstanceState(stateA);
                     swipeRefreshLayout.setRefreshing(false);
+                    progressBar.setVisibility(View.GONE);
                 }
             }
         }
@@ -771,11 +783,13 @@ public class CurrencyFragment extends Fragment {
     public interface CurrencyFragmentListener {
         String getCurrencyToTrade();
 
-        String getKey();
-
-        String getSecret();
-
         TradeApi getApi();
+
+        void saveMarketOrders(ArrayList<CurrencyOrder> orders, ArrayList<String> summary);
+
+        ArrayList<CurrencyOrder> getOrders();
+
+        ArrayList<String> getSummary();
 
         ArrayList<Currency> getCurrencies();
     }

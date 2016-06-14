@@ -51,6 +51,7 @@ public class QuotesFragment extends Fragment {
         public void run() {
             MySingleton.getInstance(getActivity().getApplicationContext()).addToRequestQueue(jsObjRequest);
             handler.postDelayed(this, 2000);
+
         }
     };
 
@@ -141,7 +142,7 @@ public class QuotesFragment extends Fragment {
 
             long endTime = System.currentTimeMillis();
 
-            System.out.println("That took " + (endTime - startTime) + " milliseconds");
+            System.out.println("DB work took " + (endTime - startTime) + " milliseconds");
             return null;
         }
     }
@@ -200,7 +201,8 @@ public class QuotesFragment extends Fragment {
         setShownCurrencies();
 
         if (listView != null) {
-            listView.setAdapter(adapter);
+            if (listView.getAdapter() != adapter)
+                listView.setAdapter(adapter);
             listView.onRestoreInstanceState(state);
             listView.setDropListener(onDrop);
             listView.setRemoveListener(onRemove);
@@ -304,7 +306,7 @@ public class QuotesFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         stopRequests();
-        Log.d("FFFF", "Detached");
+        Log.d("Quotes", "Detached");
         mListener = null;
     }
 

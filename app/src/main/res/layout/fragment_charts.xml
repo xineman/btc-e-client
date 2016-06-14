@@ -1,0 +1,24 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="nf.co.xine.btc_eclient.ChartsFragment">
+
+    <com.wang.avi.AVLoadingIndicatorView
+        android:id="@+id/charts_progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone"
+        app:indicator="BallPulseSync"
+        app:indicator_color="@color/colorPrimary" />
+
+    <WebView
+        android:id="@+id/webview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+    </WebView>
+
+</FrameLayout>
