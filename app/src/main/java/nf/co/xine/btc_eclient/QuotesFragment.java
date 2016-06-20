@@ -172,7 +172,11 @@ public class QuotesFragment extends Fragment {
         return url.toString();
     }
 
-    private void stopRequests() {
+    public void startRequests() {
+        handler.post(makeRequest);
+    }
+
+    public void stopRequests() {
         MySingleton.getInstance(getActivity().getApplicationContext()).getRequestQueue().cancelAll(new RequestQueue.RequestFilter() {
             @Override
             public boolean apply(Request<?> request) {
@@ -313,5 +317,7 @@ public class QuotesFragment extends Fragment {
 
     public interface OnFragmentInteractionListener {
         void showCurrencyFragment(String currencyName);
+
+        boolean isConnectedToNetwork();
     }
 }

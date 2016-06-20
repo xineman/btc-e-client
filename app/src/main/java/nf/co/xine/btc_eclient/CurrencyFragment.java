@@ -150,8 +150,10 @@ public class CurrencyFragment extends Fragment {
 
     public void updateCurrencyToTrade() {
         currencyToTrade = mListener.getCurrencyToTrade();
-        tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-        price.setFilters(new InputFilter[]{new DecimalDigitsInputFilter(tradeApi.info.getCurrentDecimalPlaces())});
+        if (mListener.isPublicInfoReceived()) {
+            tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
+            price.setFilters(new InputFilter[]{new DecimalDigitsInputFilter(tradeApi.info.getCurrentDecimalPlaces())});
+        }
         amount.setFilters(new InputFilter[]{new DecimalDigitsInputFilter(8)});
         updateInfo();
     }
@@ -256,6 +258,7 @@ public class CurrencyFragment extends Fragment {
         updateCurrencyBalance.cancel(true);
         updateOrders.cancel(true);
         updateSummary.cancel(true);
+        mListener.saveMarketOrders(orders, summary);
         Log.d("Currency", "Paused");
     }
 
@@ -264,7 +267,7 @@ public class CurrencyFragment extends Fragment {
         super.onResume();
         orders = mListener.getOrders();
         summary = mListener.getSummary();
-        updateInfo();
+        //updateInfo();
         if (orders != null && summary != null
                 && StaticConverter.currencyNameToUrlFormat(summary.get(0)).equals(StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()))) {
             updateUI();
@@ -272,6 +275,7 @@ public class CurrencyFragment extends Fragment {
             getActivity().getTheme().resolveAttribute(android.support.v7.appcompat.R.attr.actionBarSize, typed_value, true);
             swipeRefreshLayout.setProgressViewOffset(false, 0, getResources().getDimensionPixelSize(typed_value.resourceId));
             swipeRefreshLayout.setRefreshing(true);
+            updateInfo();
         } else progressBar.setVisibility(View.VISIBLE);
         setupUI(getView().findViewById(R.id.currency_parent));
         Log.d("Currency", "Resumed");
@@ -280,7 +284,6 @@ public class CurrencyFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener.saveMarketOrders(orders, summary);
         mListener = null;
     }
 
@@ -446,27 +449,31 @@ public class CurrencyFragment extends Fragment {
             createOrder.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (StaticConverter.getDoubleFromEditText(price) > tradeApi.info.getCurrentMaxPrice() || StaticConverter.getDoubleFromEditText(price) < tradeApi.info.getCurrentMinPrice()) {
-                        Toast toast = Toast.makeText(getActivity(), "Enter price between " + tradeApi.info.getCurrentMinPrice().toString() + " and " + tradeApi.info.getCurrentMaxPrice().toString()
-                                        + " " + StaticConverter.right(currencyToTrade, 3),
-                                Toast.LENGTH_SHORT);
-                        toast.show();
-                    } else if (StaticConverter.getDoubleFromEditText(amount) < tradeApi.info.getCurrentMinAmount()) {
-                        Toast toast = Toast.makeText(getActivity(), "Minimal amount is " + tradeApi.info.getCurrentMinAmount() + " " + currencyToTrade.substring(0, 3),
-                                Toast.LENGTH_SHORT);
-                        toast.show();
+                    if (mListener.isConnectedToNetwork() && mListener.isPublicInfoReceived()) {
+                        if (StaticConverter.getDoubleFromEditText(price) > tradeApi.info.getCurrentMaxPrice() || StaticConverter.getDoubleFromEditText(price) < tradeApi.info.getCurrentMinPrice()) {
+                            Toast toast = Toast.makeText(getActivity(), "Enter price between " + tradeApi.info.getCurrentMinPrice().toString() + " and " + tradeApi.info.getCurrentMaxPrice().toString()
+                                            + " " + StaticConverter.right(currencyToTrade, 3),
+                                    Toast.LENGTH_SHORT);
+                            toast.show();
+                        } else if (StaticConverter.getDoubleFromEditText(amount) < tradeApi.info.getCurrentMinAmount()) {
+                            Toast toast = Toast.makeText(getActivity(), "Minimal amount is " + tradeApi.info.getCurrentMinAmount() + " " + currencyToTrade.substring(0, 3),
+                                    Toast.LENGTH_SHORT);
+                            toast.show();
+                        } else {
+                            tradeApi.trade.resetParams();
+                            tradeApi.trade.setType(orderType);
+                            tradeApi.trade.setPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
+                            tradeApi.trade.setAmount(amount.getText().toString());
+                            tradeApi.trade.setRate(price.getText().toString());
+                            new CreateOrder().execute();
+                            hideSoftKeyboard(getActivity());
+                            buyOrderButton.setVisibility(View.VISIBLE);
+                            sellOrderButton.setVisibility(View.VISIBLE);
+                            if (summaryLayout.getVisibility() == View.GONE) expand(summaryLayout);
+                            collapse(placeOrderDialog);
+                        }
                     } else {
-                        tradeApi.trade.resetParams();
-                        tradeApi.trade.setType(orderType);
-                        tradeApi.trade.setPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-                        tradeApi.trade.setAmount(amount.getText().toString());
-                        tradeApi.trade.setRate(price.getText().toString());
-                        new CreateOrder().execute();
-                        hideSoftKeyboard(getActivity());
-                        buyOrderButton.setVisibility(View.VISIBLE);
-                        sellOrderButton.setVisibility(View.VISIBLE);
-                        if (summaryLayout.getVisibility() == View.GONE) expand(summaryLayout);
-                        collapse(placeOrderDialog);
+                        showNoNetworkMessage();
                     }
                 }
             });
@@ -475,29 +482,37 @@ public class CurrencyFragment extends Fragment {
     }
 
     private void setAmountMax() {
-        if (orderType.equals("buy")) {
-            double amountVal = Double.parseDouble(tradeApi.getInfo.getBalance(currencyToTrade.substring(0, 3))) / orders.get(0).getAskPrice();
-            tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-            if (amountVal < tradeApi.info.getCurrentMinAmount())
-                amount.setText("0");
-            else
-                amount.setText(StaticConverter.doubleToString(amountVal));
-        } else {
-            double amountVal = Double.parseDouble(tradeApi.getInfo.getBalance(currencyToTrade.substring(0, 3)));
-            tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-            if (amountVal < tradeApi.info.getCurrentMinAmount())
-                amount.setText("0");
-            else
-                amount.setText(StaticConverter.doubleToString(amountVal));
-        }
+        if (orders != null && mListener.isPublicInfoReceived() && tradeApi.getInfo.isSuccess()) {
+            if (orderType.equals("buy")) {
+                double amountVal = Double.parseDouble(tradeApi.getInfo.getBalance(currencyToTrade.substring(0, 3))) / orders.get(0).getAskPrice();
+                tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
+                if (amountVal < tradeApi.info.getCurrentMinAmount())
+                    amount.setText("0");
+                else
+                    amount.setText(StaticConverter.doubleToString(amountVal));
+            } else {
+                double amountVal = Double.parseDouble(tradeApi.getInfo.getBalance(currencyToTrade.substring(0, 3)));
+                tradeApi.info.setCurrentPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
+                if (amountVal < tradeApi.info.getCurrentMinAmount())
+                    amount.setText("0");
+                else
+                    amount.setText(StaticConverter.doubleToString(amountVal));
+            }
+        } else showNoNetworkMessage();
+    }
+
+    private void showNoNetworkMessage() {
+        Toast.makeText(getActivity(), getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
     }
 
     private void setPriceToMax() {
-        if (orderType.equals("buy")) {
-            price.setText(StaticConverter.doubleToString(orders.get(0).getAskPrice()));
-        } else {
-            price.setText(StaticConverter.doubleToString(orders.get(0).getBidPrice()));
-        }
+        if (orders != null) {
+            if (orderType.equals("buy")) {
+                price.setText(StaticConverter.doubleToString(orders.get(0).getAskPrice()));
+            } else {
+                price.setText(StaticConverter.doubleToString(orders.get(0).getBidPrice()));
+            }
+        } else showNoNetworkMessage();
     }
 
     public void setupUI(View view) {
@@ -546,45 +561,6 @@ public class CurrencyFragment extends Fragment {
             inputMethodManager.hideSoftInputFromWindow(activity.getCurrentFocus().getWindowToken(), 0);
     }
 
-    private class InitValuesFromDb extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            try {
-                ArrayList<CurrencyOrder> ordersTmp = new ArrayList<>();
-                ArrayList<String> summaryTmp = new ArrayList<>();
-                DbHelper helper = new DbHelper(getActivity());
-                SQLiteDatabase db = helper.getWritableDatabase();
-                Cursor cursor = db.query("ORDERS_VAL", new String[]{"CURRENCY_NAME", "ORDERS_LIST", "SUMMARY_LIST"}, "CURRENCY_NAME='" + StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()) + "'", null, null, null, null);
-                if (cursor.getCount() == 0) {
-                    cancel(true);
-                    return null;
-                }
-                cursor.moveToNext();
-                String[] ordersStr = cursor.getString(1).split(";");
-                for (String s : ordersStr) {
-                    String[] vals = s.split(" ");
-                    ordersTmp.add(new CurrencyOrder(Double.parseDouble(vals[0]), Double.parseDouble(vals[1]), Double.parseDouble(vals[2]), Double.parseDouble(vals[3])));
-                }
-                String[] summaryStr = cursor.getString(2).split(" ");
-                cursor.close();
-                db.close();
-                Collections.addAll(summaryTmp, summaryStr);
-                orders = ordersTmp;
-                summary = summaryTmp;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            if (isAdded())
-                updateUI();
-        }
-    }
 
     private void updateUI() {
         OrdersAdapter ordersAdapter = new OrdersAdapter(getActivity(), orders, mListener.getCurrencyToTrade());
@@ -652,62 +628,100 @@ public class CurrencyFragment extends Fragment {
         }
     }
 
-    private class SaveInfoToDb extends AsyncTask<Context, Void, Void> {
-
-        DbHelper helper;
-        ContentValues values = new ContentValues();
-        StringBuilder ordersList = new StringBuilder();
-        StringBuilder summaryList = new StringBuilder();
-        String valSeparator = " ";
-        String itemSeparator = ";";
-
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            for (CurrencyOrder order : orders) {
-                ordersList.append(order.getAskPrice());
-                ordersList.append(valSeparator);
-                ordersList.append(order.getAskAmount());
-                ordersList.append(valSeparator);
-                ordersList.append(order.getBidPrice());
-                ordersList.append(valSeparator);
-                ordersList.append(order.getBidAmount());
-                ordersList.append(itemSeparator);
-            }
-            for (String s : summary) {
-                summaryList.append(s).append(" ");
-            }
-            values.put("CURRENCY_NAME", StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-            values.put("ORDERS_LIST", ordersList.toString());
-            values.put("SUMMARY_LIST", summaryList.toString());
-        }
-
-        @Override
-        protected Void doInBackground(Context... context) {
-            helper = new DbHelper(context[0]);
-            SQLiteDatabase db = helper.getWritableDatabase();
-            db.insertWithOnConflict("ORDERS_VAL", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-            //}
-            db.close();
-            Log.d("Orders", "Successfully inserted!!!");
-            return null;
-        }
-
-    }
+    //    private class SaveInfoToDb extends AsyncTask<Context, Void, Void> {
+//
+//        DbHelper helper;
+//        ContentValues values = new ContentValues();
+//        StringBuilder ordersList = new StringBuilder();
+//        StringBuilder summaryList = new StringBuilder();
+//        String valSeparator = " ";
+//        String itemSeparator = ";";
+//
+//
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//            for (CurrencyOrder order : orders) {
+//                ordersList.append(order.getAskPrice());
+//                ordersList.append(valSeparator);
+//                ordersList.append(order.getAskAmount());
+//                ordersList.append(valSeparator);
+//                ordersList.append(order.getBidPrice());
+//                ordersList.append(valSeparator);
+//                ordersList.append(order.getBidAmount());
+//                ordersList.append(itemSeparator);
+//            }
+//            for (String s : summary) {
+//                summaryList.append(s).append(" ");
+//            }
+//            values.put("CURRENCY_NAME", StaticConverter.currencyNameToUrlFormat(currencyToTrade));
+//            values.put("ORDERS_LIST", ordersList.toString());
+//            values.put("SUMMARY_LIST", summaryList.toString());
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Context... context) {
+//            helper = new DbHelper(context[0]);
+//            SQLiteDatabase db = helper.getWritableDatabase();
+//            db.insertWithOnConflict("ORDERS_VAL", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+//            //}
+//            db.close();
+//            Log.d("Orders", "Successfully inserted!!!");
+//            return null;
+//        }
+//
+//    }
+//    private class InitValuesFromDb extends AsyncTask<Void, Void, Void> {
+//
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            try {
+//                ArrayList<CurrencyOrder> ordersTmp = new ArrayList<>();
+//                ArrayList<String> summaryTmp = new ArrayList<>();
+//                DbHelper helper = new DbHelper(getActivity());
+//                SQLiteDatabase db = helper.getWritableDatabase();
+//                Cursor cursor = db.query("ORDERS_VAL", new String[]{"CURRENCY_NAME", "ORDERS_LIST", "SUMMARY_LIST"}, "CURRENCY_NAME='" + StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()) + "'", null, null, null, null);
+//                if (cursor.getCount() == 0) {
+//                    cancel(true);
+//                    return null;
+//                }
+//                cursor.moveToNext();
+//                String[] ordersStr = cursor.getString(1).split(";");
+//                for (String s : ordersStr) {
+//                    String[] vals = s.split(" ");
+//                    ordersTmp.add(new CurrencyOrder(Double.parseDouble(vals[0]), Double.parseDouble(vals[1]), Double.parseDouble(vals[2]), Double.parseDouble(vals[3])));
+//                }
+//                String[] summaryStr = cursor.getString(2).split(" ");
+//                cursor.close();
+//                db.close();
+//                Collections.addAll(summaryTmp, summaryStr);
+//                orders = ordersTmp;
+//                summary = summaryTmp;
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//            if (isAdded())
+//                updateUI();
+//        }
+//    }
 
     private class UpdateCurrencyBalance extends AsyncTask<TradeApi, Void, Void> {
 
         @Override
         protected Void doInBackground(TradeApi... apis) {
-            apis[0].getInfo.runMethod();
-
+            if (mListener.isConnectedToNetwork()) apis[0].getInfo.runMethod();
             return null;
         }
 
         @Override
         protected void onPostExecute(Void res) {
-            if (!isCancelled()) {
+            if (isAdded() && tradeApi.getInfo.isSuccess()) {
                 sellBalanceHeader.setText(currencyToTrade.substring(0, 3).toUpperCase() + " balance");
                 sellBalance.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.getInfo.getBalance(currencyToTrade.substring(0, 3)))));
                 buyBalanceHeader.setText(StaticConverter.right(currencyToTrade, 3).toUpperCase() + " balance");
@@ -717,28 +731,31 @@ public class CurrencyFragment extends Fragment {
     }
 
     private class UpdateSummary extends AsyncTask<TradeApi, Void, Void> {
+        ArrayList<String> s = new ArrayList<>();
 
         @Override
         protected Void doInBackground(TradeApi... apis) {
-            apis[0].ticker.runMethod();
-            apis[0].ticker.switchNextPair();
-            Log.d("Test", String.valueOf(apis[0].ticker.isSuccess()));
+            if (mListener.isConnectedToNetwork()) {
+                apis[0].ticker.runMethod();
+                apis[0].ticker.switchNextPair();
+                Log.d("Test", String.valueOf(apis[0].ticker.isSuccess()));
+                s.add(tradeApi.ticker.getCurrentPairName());
+                s.add(tradeApi.ticker.getCurrentLow());
+                s.add(tradeApi.ticker.getCurrentHigh());
+                s.add(tradeApi.ticker.getCurrentLast());
+                summary = s;
+            }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void res) {
-            if (isAdded()) {
+            if (isAdded() && tradeApi.ticker.isSuccess()) {
                 try {
                     min24.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.ticker.getCurrentLow())));
                     max24.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.ticker.getCurrentHigh())));
                     last.setText(StaticConverter.doubleToString(Double.parseDouble(tradeApi.ticker.getCurrentLast())));
-                    ArrayList<String> s = new ArrayList<>();
-                    s.add(tradeApi.ticker.getCurrentPairName());
-                    s.add(tradeApi.ticker.getCurrentLow());
-                    s.add(tradeApi.ticker.getCurrentHigh());
-                    s.add(tradeApi.ticker.getCurrentLast());
-                    summary = s;
+
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
                 }
@@ -748,19 +765,14 @@ public class CurrencyFragment extends Fragment {
 
     private class UpdateOrders extends AsyncTask<TradeApi, Void, Void> {
 
-        @Override
-        protected Void doInBackground(TradeApi... apis) {
-            apis[0].depth.runMethod();
-            apis[0].depth.switchNextPair();
-            return null;
-        }
+        ArrayList<CurrencyOrder> ordersTmp = new ArrayList<>();
 
         @Override
-        protected void onPostExecute(Void res) {
-            Parcelable stateA = ordersView.onSaveInstanceState();
-            ArrayList<CurrencyOrder> ordersTmp = new ArrayList<>();
-            if (!isCancelled()) {
-                if (getActivity() != null) {
+        protected Void doInBackground(TradeApi... apis) {
+            if (mListener.isConnectedToNetwork()) {
+                apis[0].depth.runMethod();
+                if (isAdded() && tradeApi.depth.isSuccess()) {
+                    tradeApi.depth.switchNextPair();
                     while (tradeApi.depth.hasNextAsk() || tradeApi.depth.hasNextBid()) {
                         tradeApi.depth.switchNextAsk();
                         tradeApi.depth.switchNextBid();
@@ -769,13 +781,26 @@ public class CurrencyFragment extends Fragment {
                                 Double.parseDouble(tradeApi.depth.getCurrentBidPrice()),
                                 Double.parseDouble(tradeApi.depth.getCurrentBidAmount())));
                     }
-                    orders = ordersTmp;
-                    OrdersAdapter ordersAdapter = new OrdersAdapter(getActivity(), orders, currencyToTrade);
-                    ordersView.setAdapter(ordersAdapter);
-                    ordersView.onRestoreInstanceState(stateA);
-                    swipeRefreshLayout.setRefreshing(false);
-                    progressBar.setVisibility(View.GONE);
+                    if (ordersTmp.size() != 0) orders = ordersTmp;
                 }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void res) {
+            Parcelable stateA = ordersView.onSaveInstanceState();
+            if (isAdded() && tradeApi.depth.isSuccess() && orders != null) {
+                OrdersAdapter ordersAdapter = new OrdersAdapter(getActivity(), orders, currencyToTrade);
+                ordersView.setAdapter(ordersAdapter);
+                ordersView.onRestoreInstanceState(stateA);
+                Log.d("Orders", "updated");
+            } else {
+                showNoNetworkMessage();
+            }
+            if (isAdded()) {
+                swipeRefreshLayout.setRefreshing(false);
+                progressBar.setVisibility(View.GONE);
             }
         }
     }
@@ -792,6 +817,10 @@ public class CurrencyFragment extends Fragment {
         ArrayList<String> getSummary();
 
         ArrayList<Currency> getCurrencies();
+
+        boolean isConnectedToNetwork();
+
+        boolean isPublicInfoReceived();
     }
 }
 

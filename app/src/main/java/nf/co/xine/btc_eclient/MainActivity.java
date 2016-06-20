@@ -1,11 +1,19 @@
 package nf.co.xine.btc_eclient;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -14,6 +22,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.assist.TradeApi;
 import com.roughike.bottombar.BottomBar;
@@ -47,9 +56,13 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     private Menu menu;
     private Spinner spinner;
     private ArrayAdapter spinnerAdapter;
-    private String aKey = ""; //API-key
-    private String aSecret = ""; //SECRET-key
+    private String aKey = "VPYPMPAM-X11DK8QF-04LO00F5-0AO22GXG-N7T4XNCG"; //API-key
+    private String aSecret = "6758b990fb6d06534f6182b4f1d1765bf279ad2e763e369b72c44c06da733255"; //SECRET-key
     private TradeApi api;
+    private boolean isConnectedToNetwork;
+    private NetworkReceiver receiver = new NetworkReceiver(this);
+    private boolean isPublicInfoReceived = false;
+    private int timeout = 5000;
 
     private ArrayList<Transaction> transactions;
     private ArrayList<MyOrder> orders;
@@ -63,12 +76,20 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        isConnectedToNetwork = activeNetwork != null;
+        Log.d("Is connected to network", String.valueOf(isConnectedToNetwork));
         try {
             api = new TradeApi(aKey, aSecret);
-            new GetPublicInfo().execute();
         } catch (Exception e) {
+            Log.d("Main activity", "Error while initializing API");
             e.printStackTrace();
         }
+
         mBottomBar = BottomBar.attach(this, savedInstanceState);
         mBottomBar.useFixedMode();
         mBottomBar.setItemsFromMenu(R.menu.activity_main_drawer, new OnMenuTabClickListener() {
@@ -81,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                     if (menu != null) {
                         menu.clear();
                         getMenuInflater().inflate(R.menu.main, menu);
+                        if (!isConnectedToNetwork)
+                            menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
                     }
                 }
                 if (menuItemId == R.id.nav_trade) {
@@ -91,6 +114,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                     getSupportFragmentManager().executePendingTransactions();
                     menu.clear();
                     getMenuInflater().inflate(R.menu.trade_menu, menu);
+                    if (!isConnectedToNetwork)
+                        menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
                     MenuItem item = menu.findItem(R.id.spinner);
                     spinner = (Spinner) MenuItemCompat.getActionView(item);
                     spinnerAdapter = new ArrayAdapter(getApplicationContext(), R.layout.currency_spinner_item, quotesFragment.getCurrencies());
@@ -108,6 +133,8 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                     transaction.commit();
                     menu.clear();
                     getMenuInflater().inflate(R.menu.main, menu);
+                    if (!isConnectedToNetwork)
+                        menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
                 }
             }
 
@@ -129,17 +156,77 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     }
 
-    // TODO: 21.05.2016 Save received info to DB, ensure that info available before using it
-    private class GetPublicInfo extends AsyncTask<Void, Void, Void> {
+    private class NetworkReceiver extends BroadcastReceiver {
+        NetworkReceiver(Context context) {
+            this.context = context;
+        }
+
+        Context context;
 
         @Override
-        protected Void doInBackground(Void... params) {
-            Log.d("Info", String.valueOf(api.info.isSuccess()));
+        public void onReceive(Context context, Intent intent) {
+            isConnectedToNetwork = !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
+            Log.w("Network Listener", String.valueOf(isConnectedToNetwork));
+            if (isConnectedToNetwork) {
+                if (!api.info.isSuccess()) new GetPublicInfo().execute(context);
+                if (menu != null) {
+                    menu.removeItem(25);
+                }
+                if (quotesFragment.isAdded()) {
+                    quotesFragment.stopRequests();
+                    quotesFragment.startRequests();
+                }
+            } else {
+                if (menu != null)
+                    menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                Toast.makeText(context, getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
+                if (quotesFragment.isAdded()) {
+                    quotesFragment.stopRequests();
+                }
+            }
+        }
+    }
+
+    // TODO: 21.05.2016 Save received info to DB, ensure that info available before using it
+    private class GetPublicInfo extends AsyncTask<Context, Void, Void> {
+
+        Context context;
+
+        @Override
+        protected Void doInBackground(Context... params) {
+            context = params[0];
+            api.setTimeouts(timeout, timeout);
             api.info.runMethod();
-            api.info.switchNextPair();
+            /*try {
+            } catch (Exception ex) {
+            }*/
+
+            //api.info.switchNextPair();
             return null;
         }
 
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (!api.info.isSuccess()) {
+                new AlertDialog.Builder(context)
+                        .setTitle("Error")
+                        .setMessage("Couldn't receive data!")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // continue with delete
+                            }
+                        })/*
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })*/
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+            } else
+                isPublicInfoReceived = true;
+        }
     }
 
     public static int getIndex(Spinner spinner, String myString) {
@@ -166,11 +253,21 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
     @Override
     public void onPause() {
         super.onPause();
+        unregisterReceiver(receiver);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(receiver, filter);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if (!isConnectedToNetwork)
+            menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
@@ -204,6 +301,9 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 spinner.setAdapter(spinnerAdapter);
             }
             return true;
+        }
+        if (id == 25) {
+            Toast.makeText(this, getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -246,6 +346,14 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     public TradeApi getApi() {
         return api;
+    }
+
+    public boolean isConnectedToNetwork() {
+        return isConnectedToNetwork;
+    }
+
+    public boolean isPublicInfoReceived() {
+        return isPublicInfoReceived;
     }
 
     @Override

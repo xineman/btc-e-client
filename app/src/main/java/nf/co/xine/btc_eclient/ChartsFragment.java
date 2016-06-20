@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.assist.TradeApi;
 import com.wang.avi.AVLoadingIndicatorView;
@@ -39,7 +40,7 @@ public class ChartsFragment extends Fragment {
     private AVLoadingIndicatorView progressBar;
     private WebView webView;
     private StringBuilder out = new StringBuilder();
-    private String parsed = "Didn't find";
+    private String parsed = null;
 
     public ChartsFragment() {
         // Required empty public constructor
@@ -90,33 +91,34 @@ public class ChartsFragment extends Fragment {
     private class Network extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... params) {
-            try {
-                URL url = new URL("https://btc-e.com/exchange/btc_usd");
-                HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+            if (mListener.isConnectedToNetwork())
+                try {
+                    URL url = new URL("https://btc-e.com/exchange/btc_usd");
+                    HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
-                BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String line;
-                while ((line = rd.readLine()) != null) {
-                    out.append(line);
+                    BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String line;
+                    while ((line = rd.readLine()) != null) {
+                        out.append(line);
+                    }
+                    Pattern pattern = Pattern.compile("<script type='text/javascript' src='https://www.google.com/jsapi'></script>(.*?)<div id='chart_div'></div>");
+                    Matcher matcher = pattern.matcher(out.toString());
+                    if (matcher.find()) {
+                        //chart data
+                        parsed = matcher.group(0);
+                    }
+                    rd.close();
+                    connection.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                Pattern pattern = Pattern.compile("<script type='text/javascript' src='https://www.google.com/jsapi'></script>(.*?)<div id='chart_div'></div>");
-                Matcher matcher = pattern.matcher(out.toString());
-                if (matcher.find()) {
-                    //chart data
-                    parsed = matcher.group(0);
-                }
-                rd.close();
-                connection.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if (isAdded()) {
+            if (isAdded() && parsed != null) {
                 webView.getSettings().setJavaScriptEnabled(true);
                 webView.setWebViewClient(new WebViewClient() {
 
@@ -130,6 +132,8 @@ public class ChartsFragment extends Fragment {
                 long endTime = System.currentTimeMillis();
 
                 System.out.println("Chart loading took " + (endTime - startTime) + " milliseconds");
+            } else {
+                progressBar.setVisibility(View.GONE);
             }
             /*TextView parsedView = (TextView) getView().findViewById(R.id.parsed);
             parsedView.setText(parsed);
@@ -137,7 +141,15 @@ public class ChartsFragment extends Fragment {
         }
     }
 
+    private void showNoNetworkMessage() {
+        Toast.makeText(getActivity(), getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
+    }
+
     public interface OnFragmentInteractionListener {
         TradeApi getApi();
+
+        boolean isConnectedToNetwork();
+
+        boolean isPublicInfoReceived();
     }
 }

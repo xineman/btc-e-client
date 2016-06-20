@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.assist.TradeApi;
 import com.wang.avi.AVLoadingIndicatorView;
@@ -89,15 +90,16 @@ public class MarketHistoryFragment extends Fragment {
         @Override
         protected Void doInBackground(Void... params) {
             api.trades.resetParams();
-            if (isAdded()) {
+            if (isAdded() && mListener.isConnectedToNetwork()) {
                 api.trades.addPair(StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()));
                 api.trades.runMethod();
-                //api.trades.setCurrentPair(ProfileFragment.convertName(mListener.getCurrencyToTrade()));
-                marketTrades = new ArrayList<>();
-                api.trades.switchNextPair();
-                while (api.trades.hasNextTrade()) {
-                    api.trades.switchNextTrade();
-                    marketTrades.add(new MarketTrade(api.trades.getCurrentType(), api.trades.getCurrentAmount(), api.trades.getCurrentPrice(), api.trades.getCurrentTimestamp()));
+                if (api.trades.isSuccess()) {
+                    marketTrades = new ArrayList<>();
+                    api.trades.switchNextPair();
+                    while (api.trades.hasNextTrade()) {
+                        api.trades.switchNextTrade();
+                        marketTrades.add(new MarketTrade(api.trades.getCurrentType(), api.trades.getCurrentAmount(), api.trades.getCurrentPrice(), api.trades.getCurrentTimestamp()));
+                    }
                 }
             }
             return null;
@@ -107,8 +109,9 @@ public class MarketHistoryFragment extends Fragment {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             refreshLayout.setRefreshing(false);
-            if (isAdded())
+            if (isAdded() && api.trades.isSuccess()) {
                 marketOrdersList.setAdapter(new MarketHistoryAdapter(getActivity(), marketTrades));
+            }
         }
     }
 
@@ -116,9 +119,17 @@ public class MarketHistoryFragment extends Fragment {
         (updateMarketHistory = new UpdateMarketHistory()).execute();
     }
 
+    private void showNoNetworkMessage() {
+        Toast.makeText(getActivity(), getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
+    }
+
     public interface OnFragmentInteractionListener {
         TradeApi getApi();
 
         String getCurrencyToTrade();
+
+        boolean isConnectedToNetwork();
+
+        boolean isPublicInfoReceived();
     }
 }
