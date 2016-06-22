@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.Editable;
@@ -365,23 +366,29 @@ public class CurrencyFragment extends Fragment {
             buyOrderButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    buyOrderButton.setVisibility(View.GONE);
-                    sellOrderButton.setVisibility(View.GONE);
-                    expand(placeOrderDialog);
-                    buyRadio.setChecked(true);
-                    setPriceToMax();
-                    setAmountMax();
+                    if (mListener.isSignedIn()) {
+                        buyOrderButton.setVisibility(View.GONE);
+                        sellOrderButton.setVisibility(View.GONE);
+                        expand(placeOrderDialog);
+                        buyRadio.setChecked(true);
+                        setPriceToMax();
+                        setAmountMax();
+                    } else
+                        Toast.makeText(getActivity(), "You have to sign in", Toast.LENGTH_SHORT).show();
                 }
             });
             sellOrderButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    buyOrderButton.setVisibility(View.GONE);
-                    sellOrderButton.setVisibility(View.GONE);
-                    expand(placeOrderDialog);
-                    sellRadio.setChecked(true);
-                    setPriceToMax();
-                    setAmountMax();
+                    if (mListener.isSignedIn()) {
+                        buyOrderButton.setVisibility(View.GONE);
+                        sellOrderButton.setVisibility(View.GONE);
+                        expand(placeOrderDialog);
+                        sellRadio.setChecked(true);
+                        setPriceToMax();
+                        setAmountMax();
+                    } else
+                        Toast.makeText(getActivity(), "You have to sign in", Toast.LENGTH_SHORT).show();
                 }
             });
             amount.addTextChangedListener(new TextWatcher() {
@@ -580,7 +587,7 @@ public class CurrencyFragment extends Fragment {
         tradeApi.depth.resetParams();
         tradeApi.ticker.resetParams();
         tradeApi.depth.addPair(StaticConverter.currencyNameToUrlFormat(currencyToTrade));
-        tradeApi.depth.setLimit(20);
+        tradeApi.depth.setLimit(mListener.getRequestLimit());
         (updateOrders = new UpdateOrders()).execute(tradeApi);
         tradeApi.ticker.addPair(StaticConverter.currencyNameToUrlFormat(mListener.getCurrencyToTrade()));
         (updateSummary = new UpdateSummary()).execute(tradeApi);
@@ -821,6 +828,10 @@ public class CurrencyFragment extends Fragment {
         boolean isConnectedToNetwork();
 
         boolean isPublicInfoReceived();
+
+        boolean isSignedIn();
+
+        int getRequestLimit();
     }
 }
 

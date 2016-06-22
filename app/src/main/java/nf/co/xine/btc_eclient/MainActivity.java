@@ -45,24 +45,31 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
         BalanceFragment.OnFragmentInteractionListener,
         MarketFragment.OnFragmentInteractionListener,
         MarketHistoryFragment.OnFragmentInteractionListener,
-        ChartsFragment.OnFragmentInteractionListener {
+        ChartsFragment.OnFragmentInteractionListener,
+        SettingsFragment.OnFragmentInteractionListener {
 
     private BottomBar mBottomBar;
     private QuotesFragment quotesFragment = new QuotesFragment();
     private CurrencyFragment currencyFragment = new CurrencyFragment();
     private MarketFragment marketFragment = new MarketFragment();
     private ProfileFragment profileFragment;
+    private SettingsFragment settingsFragment;
     private String currencyToTrade = "BTC/USD";
     private Menu menu;
     private Spinner spinner;
     private ArrayAdapter spinnerAdapter;
-    private String aKey = "VPYPMPAM-X11DK8QF-04LO00F5-0AO22GXG-N7T4XNCG"; //API-key
-    private String aSecret = "6758b990fb6d06534f6182b4f1d1765bf279ad2e763e369b72c44c06da733255"; //SECRET-key
+    private String aKey = null; //API-key
+    private String aSecret = null; //SECRET-key
+
     private TradeApi api;
     private boolean isConnectedToNetwork;
     private NetworkReceiver receiver = new NetworkReceiver(this);
     private boolean isPublicInfoReceived = false;
     private int timeout = 5000;
+    private boolean isSignedIn = false;
+    private Context context = this;
+    private int selected;
+    private int requestLimit = 20;
 
     private ArrayList<Transaction> transactions;
     private ArrayList<MyOrder> orders;
@@ -105,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                         if (!isConnectedToNetwork)
                             menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
                     }
+                    selected = mBottomBar.getCurrentTabPosition();
                 }
                 if (menuItemId == R.id.nav_trade) {
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -122,19 +130,40 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                     spinner.setAdapter(spinnerAdapter);
                     spinner.setOnItemSelectedListener(currencyChangeListener);
                     spinner.setSelection(getIndex(spinner, currencyToTrade));
+                    selected = mBottomBar.getCurrentTabPosition();
                 }
 
                 if (menuItemId == R.id.nav_profile) {
-                    if (profileFragment == null)
-                        profileFragment = new ProfileFragment();
+                    if (isSignedIn) {
+                        if (profileFragment == null)
+                            profileFragment = new ProfileFragment();
+                        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                        transaction.replace(R.id.main_content, profileFragment, "Profile");
+                        //transaction.addToBackStack(null);
+                        transaction.commit();
+                        menu.clear();
+                        getMenuInflater().inflate(R.menu.main, menu);
+                        if (!isConnectedToNetwork)
+                            menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                        selected = mBottomBar.getCurrentTabPosition();
+                    } else {
+                        Toast.makeText(context, "You have to sign in", Toast.LENGTH_SHORT).show();
+                        mBottomBar.selectTabAtPosition(selected, false);
+                    }
+                }
+
+                if (menuItemId == R.id.nav_settings) {
+                    if (settingsFragment == null)
+                        settingsFragment = new SettingsFragment();
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                    transaction.replace(R.id.main_content, profileFragment, "Profile");
+                    transaction.replace(R.id.main_content, settingsFragment, "Settings");
                     //transaction.addToBackStack(null);
                     transaction.commit();
                     menu.clear();
                     getMenuInflater().inflate(R.menu.main, menu);
                     if (!isConnectedToNetwork)
                         menu.add(Menu.NONE, 25, 1, getString(R.string.no_connection)).setIcon(R.drawable.ic_error_outline_white_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                    selected = mBottomBar.getCurrentTabPosition();
                 }
             }
 
@@ -156,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     }
 
+
     private class NetworkReceiver extends BroadcastReceiver {
         NetworkReceiver(Context context) {
             this.context = context;
@@ -168,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
             isConnectedToNetwork = !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
             Log.w("Network Listener", String.valueOf(isConnectedToNetwork));
             if (isConnectedToNetwork) {
-                if (!api.info.isSuccess()) new GetPublicInfo().execute(context);
+                if (api != null && !api.info.isSuccess()) new GetPublicInfo().execute(context);
                 if (menu != null) {
                     menu.removeItem(25);
                 }
@@ -300,6 +330,9 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
                 spinnerAdapter = new ArrayAdapter(getApplicationContext(), R.layout.currency_spinner_item, quotesFragment.getCurrencies());
                 spinner.setAdapter(spinnerAdapter);
             }
+            if (getSupportFragmentManager().findFragmentByTag("Settings") != null && getSupportFragmentManager().findFragmentByTag("Settings").isVisible()) {
+
+            }
             return true;
         }
         if (id == 25) {
@@ -346,6 +379,53 @@ public class MainActivity extends AppCompatActivity implements QuotesFragment.On
 
     public TradeApi getApi() {
         return api;
+    }
+
+    public String getKey() {
+        return aKey;
+    }
+
+    public String getSecret() {
+        return aSecret;
+    }
+
+    public void setKey(String aKey) {
+        this.aKey = aKey;
+    }
+
+    public void setSecret(String aSecret) {
+        this.aSecret = aSecret;
+    }
+
+    public void signOut() {
+        aKey = null;
+        aSecret = null;
+        isSignedIn = false;
+    }
+
+    public void signIn(String key, String secret) {
+        aKey = key;
+        aSecret = secret;
+        isSignedIn = true;
+        try {
+            api = new TradeApi(aKey, aSecret);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        if (api != null && !api.info.isSuccess()) new GetPublicInfo().execute(context);
+    }
+
+    public boolean isSignedIn() {
+        return isSignedIn;
+    }
+
+    public int getRequestLimit() {
+        return requestLimit;
+    }
+
+    public void setRequestLimit(int requestLimit) {
+        this.requestLimit = requestLimit;
     }
 
     public boolean isConnectedToNetwork() {
